@@ -21,6 +21,7 @@ from fastvideo.v1.layers.rotary_embedding import (_apply_rotary_emb,
 from fastvideo.v1.layers.visual_embedding import (ModulateProjection,
                                                   PatchEmbed, TimestepEmbedder)
 from fastvideo.v1.models.dits.base import BaseDiT
+from fastvideo.v1.platforms import _Backend
 
 
 class WanImageEmbedding(torch.nn.Module):
@@ -117,7 +118,10 @@ class WanSelfAttention(nn.Module):
                                    head_size=self.head_dim,
                                    dropout_rate=0,
                                    softmax_scale=None,
-                                   causal=False)
+                                   causal=False,
+                                   supported_attention_backends=[
+                                       _Backend.FLASH_ATTN, _Backend.TORCH_SDPA
+                                   ])
 
     def forward(self, x: torch.Tensor, context: torch.Tensor,
                 context_lens: int):
@@ -158,13 +162,16 @@ class WanT2VCrossAttention(WanSelfAttention):
 
 class WanI2VCrossAttention(WanSelfAttention):
 
-    def __init__(self,
-                 dim: int,
-                 num_heads: int,
-                 window_size=(-1, -1),
-                 qk_norm=True,
-                 eps=1e-6) -> None:
-        super().__init__(dim, num_heads, window_size, qk_norm, eps)
+    def __init__(
+            self,
+            dim: int,
+            num_heads: int,
+            window_size=(-1, -1),
+            qk_norm=True,
+            eps=1e-6,
+            supported_attention_backends: Optional[List[str]] = None) -> None:
+        super().__init__(dim, num_heads, window_size, qk_norm, eps,
+                         supported_attention_backends)
 
         self.add_k_proj = ReplicatedLinear(dim, dim)
         self.add_v_proj = ReplicatedLinear(dim, dim)
@@ -212,6 +219,7 @@ class WanTransformerBlock(nn.Module):
         cross_attn_norm: bool = False,
         eps: float = 1e-6,
         added_kv_proj_dim: Optional[int] = None,
+        supported_attention_backends: Optional[List[_Backend]] = None,
     ):
         super().__init__()
 
@@ -221,10 +229,11 @@ class WanTransformerBlock(nn.Module):
         self.to_k = ReplicatedLinear(dim, dim, bias=True)
         self.to_v = ReplicatedLinear(dim, dim, bias=True)
         self.to_out = ReplicatedLinear(dim, dim, bias=True)
-        self.attn1 = DistributedAttention(num_heads=num_heads,
-                                          head_size=dim // num_heads,
-                                          dropout_rate=0.0,
-                                          causal=False)
+        self.attn1 = DistributedAttention(
+            num_heads=num_heads,
+            head_size=dim // num_heads,
+            causal=False,
+            supported_attention_backends=supported_attention_backends)
         self.hidden_dim = dim
         self.num_attention_heads = num_heads
         dim_head = dim // num_heads
@@ -342,6 +351,7 @@ class WanTransformer3DModel(BaseDiT):
     _fsdp_shard_conditions = [
         lambda n, m: "blocks" in n and str.isdigit(n.split(".")[-1]),
     ]
+    _supported_attention_backends = [_Backend.FLASH_ATTN, _Backend.TORCH_SDPA]
     _param_names_mapping = {
         r"^patch_embedding\.(.*)$":
         r"patch_embedding.proj.\1",
@@ -428,7 +438,9 @@ class WanTransformer3DModel(BaseDiT):
         self.blocks = nn.ModuleList([
             WanTransformerBlock(inner_dim, ffn_dim, num_attention_heads,
                                 qk_norm, cross_attn_norm, eps,
-                                added_kv_proj_dim) for _ in range(num_layers)
+                                added_kv_proj_dim,
+                                self._supported_attention_backends)
+            for _ in range(num_layers)
         ])
 
         # 4. Output norm & projection
