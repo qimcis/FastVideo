@@ -38,14 +38,15 @@ class SDPAImpl(AttentionImpl):
         self,
         num_heads: int,
         head_size: int,
-        dropout_rate: float,
         causal: bool,
         softmax_scale: float,
         num_kv_heads: Optional[int] = None,
+        prefix: str = "",
+        **extra_impl_args,
     ) -> None:
-        self.dropout_rate = dropout_rate
         self.causal = causal
         self.softmax_scale = softmax_scale
+        self.dropout = extra_impl_args.get("dropout_p", 0.0)
 
     def forward(
         self,
@@ -60,7 +61,7 @@ class SDPAImpl(AttentionImpl):
         value = value.transpose(1, 2)
         attn_kwargs = {
             "attn_mask": None,
-            "dropout_p": self.dropout_rate,
+            "dropout_p": self.dropout,
             "is_causal": self.causal,
             "scale": self.softmax_scale
         }

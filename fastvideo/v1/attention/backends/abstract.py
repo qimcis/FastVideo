@@ -186,9 +186,10 @@ class AttentionImpl(ABC, Generic[T]):
         num_heads: int,
         head_size: int,
         softmax_scale: float,
-        dropout_rate: float = 0.0,
         causal: bool = False,
         num_kv_heads: Optional[int] = None,
+        prefix: str = "",
+        **extra_impl_args,
     ) -> None:
         raise NotImplementedError
 
