@@ -19,7 +19,7 @@ class FastVideoArgs:
     model_path: str
 
     # Distributed executor backend
-    distributed_executor_backend: str = "torch"
+    distributed_executor_backend: str = "mp"
 
     inference_mode: bool = True  # if False == training mode
 
@@ -126,7 +126,7 @@ class FastVideoArgs:
         parser.add_argument(
             "--distributed-executor-backend",
             type=str,
-            choices=["mp", "ray", "torch"],
+            choices=["mp"],
             default=FastVideoArgs.distributed_executor_backend,
             help="The distributed executor backend to use",
         )
@@ -431,12 +431,15 @@ class FastVideoArgs:
 
         return cls(**kwargs)
 
-    def check_inference_args(self) -> None:
+    def check_fastvideo_args(self) -> None:
         """Validate inference arguments for consistency"""
         if self.tp_size is None:
             self.tp_size = self.num_gpus
         if self.sp_size is None:
             self.sp_size = self.num_gpus
+
+        if self.num_gpus < max(self.tp_size, self.sp_size):
+            self.num_gpus = max(self.tp_size, self.sp_size)
 
         if self.tp_size != self.sp_size:
             raise ValueError(
@@ -470,7 +473,7 @@ def prepare_fastvideo_args(argv: List[str]) -> FastVideoArgs:
     FastVideoArgs.add_cli_args(parser)
     raw_args = parser.parse_args(argv)
     fastvideo_args = FastVideoArgs.from_cli_args(raw_args)
-    fastvideo_args.check_inference_args()
+    fastvideo_args.check_fastvideo_args()
     global _current_fastvideo_args
     _current_fastvideo_args = fastvideo_args
     return fastvideo_args

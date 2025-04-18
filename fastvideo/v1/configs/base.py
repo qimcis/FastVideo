@@ -1,5 +1,5 @@
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any
+from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -47,9 +47,6 @@ class BaseConfig:
     enable_torch_compile: bool = False
 
     neg_prompt: Optional[str] = None
-
-    # Additional parameters can be added as a dict
-    extra_params: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
