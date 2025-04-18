@@ -4,14 +4,17 @@
 import argparse
 import hashlib
 import importlib
+import ctypes
+import signal
 import inspect
 import json
 import math
+import traceback
 import os
 import sys
 import tempfile
 from functools import wraps, partial
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast, Callable
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast, Callable, Tuple
 from dataclasses import asdict, fields
 import cloudpickle
 
@@ -550,7 +553,35 @@ def diff_keys(a, b):
     return [k for k in asdict(a) if asdict(a)[k] != asdict(b)[k]]
 
 
-def update_in_place(target, source, ignore_fields=()):
+def update_in_place(target, source, ignore_fields=()) -> None:
     for f in fields(target):
         if hasattr(source, f.name) and f.name not in list(ignore_fields):
             setattr(target, f.name, getattr(source, f.name))
+
+
+def kill_itself_when_parent_died() -> None:
+    # if sys.platform == "linux":
+    # sigkill this process when parent worker manager dies
+    PR_SET_PDEATHSIG = 1
+    libc = ctypes.CDLL("libc.so.6")
+    libc.prctl(PR_SET_PDEATHSIG, signal.SIGKILL)
+    # else:
+    #     logger.warning("kill_itself_when_parent_died is only supported in linux.")
+
+
+def get_exception_traceback() -> str:
+    etype, value, tb = sys.exc_info()
+    err_str = "".join(traceback.format_exception(etype, value, tb))
+    return err_str
+
+
+class TypeBasedDispatcher:
+
+    def __init__(self, mapping: List[Tuple[Type, Callable]]):
+        self._mapping = mapping
+
+    def __call__(self, obj: Any):
+        for ty, fn in self._mapping:
+            if isinstance(obj, ty):
+                return fn(obj)
+        raise ValueError(f"Invalid object: {obj}")
