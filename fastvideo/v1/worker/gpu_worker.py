@@ -76,6 +76,8 @@ class Worker:
 
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = "29503"
+        os.environ["LOCAL_RANK"] = str(self.local_rank)
+        os.environ["RANK"] = str(self.rank)
 
         # Initialize the distributed environment.
         init_worker_distributed_environment(self.fastvideo_args, self.rank,
@@ -92,7 +94,9 @@ class Worker:
 
     def shutdown(self) -> Dict[str, Any]:
         """Gracefully shut down the worker process"""
-        logger.info("Worker %d shutting down...", self.rank)
+        logger.info("Worker %d shutting down...",
+                    self.rank,
+                    local_main_process_only=False)
         # Clean up resources
         if hasattr(self, 'pipeline') and self.pipeline is not None:
             # Clean up pipeline resources if needed
@@ -104,12 +108,16 @@ class Worker:
         # Destroy the distributed environment
         cleanup_dist_env_and_memory(shutdown_ray=False)
 
-        logger.info("Worker %d shutdown complete", self.rank)
+        logger.info("Worker %d shutdown complete",
+                    self.rank,
+                    local_main_process_only=False)
         return {"status": "shutdown_complete"}
 
     def event_loop(self) -> None:
         """Event loop for the worker."""
-        logger.info("Worker %d starting event loop...", self.rank)
+        logger.info("Worker %d starting event loop...",
+                    self.rank,
+                    local_main_process_only=False)
         while True:
             recv_rpc = self.pipe.recv()
             method_name = recv_rpc.get('method')
@@ -178,7 +186,9 @@ def run_worker_process(fastvideo_args: FastVideoArgs, local_rank: int,
     faulthandler.enable()
     parent_process = psutil.Process().parent()
 
-    logger.info("Worker %d initializing...", rank)
+    logger.info("Worker %d initializing...",
+                rank,
+                local_main_process_only=False)
     try:
         worker = Worker(fastvideo_args, local_rank, rank, pipe)
         logger.info("Worker %d sending ready", rank)
@@ -190,6 +200,7 @@ def run_worker_process(fastvideo_args: FastVideoArgs, local_rank: int,
     except Exception:
         traceback = get_exception_traceback()
         logger.error("Worker %d hit an exception: %s", rank, traceback)
+
         parent_process.send_signal(signal.SIGQUIT)
 
 
