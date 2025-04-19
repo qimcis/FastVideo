@@ -114,14 +114,14 @@ class WanSelfAttention(nn.Module):
         self.norm_k = RMSNorm(dim, eps=eps) if qk_norm else nn.Identity()
 
         # Scaled dot product attention
-        self.attn = LocalAttention(num_heads=num_heads,
-                                   head_size=self.head_dim,
-                                   dropout_rate=0,
-                                   softmax_scale=None,
-                                   causal=False,
-                                   supported_attention_backends=[
-                                       _Backend.FLASH_ATTN, _Backend.TORCH_SDPA
-                                   ])
+        self.attn = LocalAttention(
+            num_heads=num_heads,
+            head_size=self.head_dim,
+            dropout_rate=0,
+            softmax_scale=None,
+            causal=False,
+            supported_attention_backends=(_Backend.FLASH_ATTN,
+                                          _Backend.TORCH_SDPA))
 
     def forward(self, x: torch.Tensor, context: torch.Tensor,
                 context_lens: int):
@@ -163,13 +163,14 @@ class WanT2VCrossAttention(WanSelfAttention):
 class WanI2VCrossAttention(WanSelfAttention):
 
     def __init__(
-            self,
-            dim: int,
-            num_heads: int,
-            window_size=(-1, -1),
-            qk_norm=True,
-            eps=1e-6,
-            supported_attention_backends: Optional[List[str]] = None) -> None:
+        self,
+        dim: int,
+        num_heads: int,
+        window_size=(-1, -1),
+        qk_norm=True,
+        eps=1e-6,
+        supported_attention_backends: Optional[Tuple[_Backend, ...]] = None
+    ) -> None:
         super().__init__(dim, num_heads, window_size, qk_norm, eps,
                          supported_attention_backends)
 
@@ -218,7 +219,8 @@ class WanTransformerBlock(nn.Module):
                  cross_attn_norm: bool = False,
                  eps: float = 1e-6,
                  added_kv_proj_dim: Optional[int] = None,
-                 supported_attention_backends: Optional[List[_Backend]] = None,
+                 supported_attention_backends: Optional[Tuple[_Backend,
+                                                              ...]] = None,
                  prefix: str = ""):
         super().__init__()
 
@@ -351,9 +353,8 @@ class WanTransformer3DModel(BaseDiT):
     _fsdp_shard_conditions = [
         lambda n, m: "blocks" in n and str.isdigit(n.split(".")[-1]),
     ]
-    _supported_attention_backends = [
-        _Backend.SLIDING_TILE_ATTN, _Backend.FLASH_ATTN, _Backend.TORCH_SDPA
-    ]
+    _supported_attention_backends = (_Backend.SLIDING_TILE_ATTN,
+                                     _Backend.FLASH_ATTN, _Backend.TORCH_SDPA)
     _param_names_mapping = {
         r"^patch_embedding\.(.*)$":
         r"patch_embedding.proj.\1",
