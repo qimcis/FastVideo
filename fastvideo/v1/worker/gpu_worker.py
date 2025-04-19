@@ -1,25 +1,29 @@
-import torch
-from typing import Optional, Dict, Any, cast
-import setproctitle
-import psutil
-import faulthandler
-import signal
-import gc
-import os
 import contextlib
+import faulthandler
+import gc
+import multiprocessing as mp
+import os
+import signal
+import sys
+from typing import Any, Dict, Optional, TextIO, cast
 
+import psutil
+import torch
+
+from fastvideo.v1.distributed import (cleanup_dist_env_and_memory,
+                                      init_distributed_environment,
+                                      initialize_model_parallel)
 from fastvideo.v1.fastvideo_args import FastVideoArgs
 from fastvideo.v1.logger import init_logger
-from fastvideo.v1.pipelines import ForwardBatch
-from fastvideo.v1.distributed import (
-    init_distributed_environment,
-    initialize_model_parallel,
-)
-from fastvideo.v1.utils import kill_itself_when_parent_died, get_exception_traceback
-from fastvideo.v1.pipelines import build_pipeline
-from fastvideo.v1.distributed import cleanup_dist_env_and_memory
+from fastvideo.v1.pipelines import ForwardBatch, build_pipeline
+from fastvideo.v1.utils import (get_exception_traceback,
+                                kill_itself_when_parent_died)
 
 logger = init_logger(__name__)
+
+# ANSI color codes
+CYAN = '\033[1;36m'
+RESET = '\033[0;0m'
 
 
 class Worker:
@@ -39,37 +43,11 @@ class Worker:
         # TODO(will): add request dispatcher
         # self._request_dispatcher = TypeBasedDispatcher(
         #     [
-        # (TokenizedGenerateReqInput, self.handle_generate_request),
-        # (TokenizedEmbeddingReqInput, self.handle_embedding_request),
-        # (FlushCacheReq, self.flush_cache_wrapped),
-        # (AbortReq, self.abort_request),
-        # (OpenSessionReqInput, self.open_session),
-        # (CloseSessionReqInput, self.close_session),
-        # (UpdateWeightFromDiskReqInput, self.update_weights_from_disk),
-        # (InitWeightsUpdateGroupReqInput, self.init_weights_update_group),
-        # (
-        #     UpdateWeightsFromDistributedReqInput,
-        #     self.update_weights_from_distributed,
-        # ),
-        # (UpdateWeightsFromTensorReqInput, self.update_weights_from_tensor),
-        # (GetWeightsByNameReqInput, self.get_weights_by_name),
-        # (ReleaseMemoryOccupationReqInput, self.release_memory_occupation),
-        # (ResumeMemoryOccupationReqInput, self.resume_memory_occupation),
-        # (ProfileReq, self.profile),
-        # (GetInternalStateReq, self.get_internal_state),
-        # (SetInternalStateReq, self.set_internal_state),
         # (RpcReqInput, self.handle_rpc_request),
         # (GenerateRequest, self.handle_generate_request),
         # (ExpertDistributionReq, self.expert_distribution_handle),
         #     ]
         # )
-
-    # def handle_rpc_request(self, req: RpcReqInput) -> RpcReqOutput:
-    #     pass
-
-    # def handle_generate_request(self, req: GenerateRequest) -> None:
-    #     logger.info(f"Worker {self.rank} received generate request")
-    #     pass
 
     def init_device(self) -> None:
         """Initialize the device for the worker."""
@@ -189,17 +167,19 @@ def init_worker_distributed_environment(
 
 def run_worker_process(fastvideo_args: FastVideoArgs, local_rank: int,
                        rank: int, pipe):
-    logger.info("Worker %d starting...", rank)
-    try:
-        # Config the process
-        kill_itself_when_parent_died()
-        prefix = f"{local_rank}"
-        setproctitle.setproctitle(
-            f"fastvideo::gpu_worker{prefix.replace(' ', '_')}")
-        faulthandler.enable()
-        parent_process = psutil.Process().parent()
+    # Add process-specific prefix to stdout and stderr
+    process_name = mp.current_process().name
+    pid = os.getpid()
+    _add_prefix(sys.stdout, process_name, pid)
+    _add_prefix(sys.stderr, process_name, pid)
 
-        logger.info("Worker %d initializing...", rank)
+    # Config the process
+    kill_itself_when_parent_died()
+    faulthandler.enable()
+    parent_process = psutil.Process().parent()
+
+    logger.info("Worker %d initializing...", rank)
+    try:
         worker = Worker(fastvideo_args, local_rank, rank, pipe)
         logger.info("Worker %d sending ready", rank)
         pipe.send({
@@ -211,3 +191,30 @@ def run_worker_process(fastvideo_args: FastVideoArgs, local_rank: int,
         traceback = get_exception_traceback()
         logger.error("Worker %d hit an exception: %s", rank, traceback)
         parent_process.send_signal(signal.SIGQUIT)
+
+
+def _add_prefix(file: TextIO, worker_name: str, pid: int) -> None:
+    """Prepend each output line with process-specific prefix"""
+
+    prefix = f"{CYAN}({worker_name} pid={pid}){RESET} "
+    file_write = file.write
+
+    def write_with_prefix(s: str):
+        if not s:
+            return
+        if file.start_new_line:  # type: ignore[attr-defined]
+            file_write(prefix)
+        idx = 0
+        while (next_idx := s.find('\n', idx)) != -1:
+            next_idx += 1
+            file_write(s[idx:next_idx])
+            if next_idx == len(s):
+                file.start_new_line = True  # type: ignore[attr-defined]
+                return
+            file_write(prefix)
+            idx = next_idx
+        file_write(s[idx:])
+        file.start_new_line = False  # type: ignore[attr-defined]
+
+    file.start_new_line = True  # type: ignore[attr-defined]
+    file.write = write_with_prefix  # type: ignore[method-assign]

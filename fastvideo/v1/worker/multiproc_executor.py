@@ -1,17 +1,18 @@
-import signal
-import psutil
-import multiprocessing as mp
-import time
-from typing import List, Callable, Any, Optional, Union, cast
-from multiprocessing.process import BaseProcess
 import atexit
 import contextlib
+import multiprocessing as mp
+import signal
+import time
+from multiprocessing.process import BaseProcess
+from typing import Any, Callable, List, Optional, Union, cast
 
-from fastvideo.v1.worker.executor import Executor
+import psutil
+
 from fastvideo.v1.fastvideo_args import FastVideoArgs
 from fastvideo.v1.logger import init_logger
-from fastvideo.v1.worker.gpu_worker import run_worker_process
 from fastvideo.v1.pipelines.pipeline_batch_info import ForwardBatch
+from fastvideo.v1.worker.executor import Executor
+from fastvideo.v1.worker.gpu_worker import run_worker_process
 
 logger = init_logger(__name__)
 
@@ -42,9 +43,8 @@ class MultiprocExecutor(Executor):
         self.world_size = self.fastvideo_args.num_gpus
         self.shutting_down = False
 
-        # Set mp start method
-        # TODO(will): can we also use "fork" here? Using spawn here to make cuda
-        # initialization work.
+        # this will force the use of the `spawn` multiprocessing start if cuda
+        # is initialized
         mp.set_start_method("spawn", force=True)
 
         self.workers: List[BaseProcess] = []
@@ -56,8 +56,11 @@ class MultiprocExecutor(Executor):
             self.worker_pipes.append(executor_pipe)
 
             worker = mp.Process(target=run_worker_process,
-                                args=(self.fastvideo_args, rank, rank,
-                                      worker_pipe))
+                                name=f"FVWorkerProc-{rank}",
+                                kwargs=dict(fastvideo_args=self.fastvideo_args,
+                                            local_rank=rank,
+                                            rank=rank,
+                                            pipe=worker_pipe))
             worker.start()
             self.workers.append(worker)
         logger.info("Workers: %s", self.workers)

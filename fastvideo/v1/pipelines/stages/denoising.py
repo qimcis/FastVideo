@@ -16,8 +16,8 @@ from fastvideo.v1.distributed import (get_sequence_model_parallel_rank,
                                       get_sequence_model_parallel_world_size)
 from fastvideo.v1.distributed.communication_op import (
     sequence_model_parallel_all_gather)
-from fastvideo.v1.forward_context import set_forward_context
 from fastvideo.v1.fastvideo_args import FastVideoArgs
+from fastvideo.v1.forward_context import set_forward_context
 from fastvideo.v1.logger import init_logger
 from fastvideo.v1.pipelines.pipeline_batch_info import ForwardBatch
 from fastvideo.v1.pipelines.stages.base import PipelineStage
@@ -178,10 +178,9 @@ class DenoisingStage(PipelineStage):
                     self.attn_backend = get_attn_backend(
                         head_size=attn_head_size,
                         dtype=torch.float16,  # TODO(will): hack
-                        supported_attention_backends=[
+                        supported_attention_backends=(
                             _Backend.SLIDING_TILE_ATTN, _Backend.FLASH_ATTN,
-                            _Backend.TORCH_SDPA
-                        ]  # hack
+                            _Backend.TORCH_SDPA)  # hack
                     )
                     if st_attn_available and self.attn_backend == SlidingTileAttentionBackend:
                         self.attn_metadata_builder_cls = self.attn_backend.get_builder_cls(
