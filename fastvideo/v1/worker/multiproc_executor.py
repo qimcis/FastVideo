@@ -1,12 +1,9 @@
 import atexit
 import contextlib
 import multiprocessing as mp
-import signal
 import time
 from multiprocessing.process import BaseProcess
 from typing import Any, Callable, List, Optional, Union, cast
-
-import psutil
 
 from fastvideo.v1.fastvideo_args import FastVideoArgs
 from fastvideo.v1.logger import init_logger
@@ -20,28 +17,6 @@ logger = init_logger(__name__)
 class MultiprocExecutor(Executor):
 
     def _init_executor(self) -> None:
-        # The child processes will send SIGUSR1 when unrecoverable
-        # errors happen.
-        def sigusr1_handler(signum, frame):
-            logger.fatal(
-                "MulitprocExecutor got fatal signal from worker processes, "
-                "shutting down. See stack trace above for root cause issue.")
-            # Propagate error up to parent process.
-            parent_process = psutil.Process().parent()
-            parent_process.send_signal(signal.SIGUSR1)
-            self.shutdown()
-
-        # Handle Ctrl+C and regular termination
-        def sigint_handler(signum, frame):
-            logger.info("Received interrupt signal, shutting down workers...")
-            self.shutdown()
-            # Then re-raise the signal to the parent process
-            signal.default_int_handler(signum, frame)
-
-        signal.signal(signal.SIGUSR1, sigusr1_handler)
-        signal.signal(signal.SIGINT, sigint_handler)
-        signal.signal(signal.SIGTERM, sigint_handler)
-
         self.world_size = self.fastvideo_args.num_gpus
         self.shutting_down = False
 
