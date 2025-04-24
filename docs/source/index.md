@@ -32,7 +32,8 @@ FastVideo is a lightweight framework for accelerating large video diffusion mode
 
 FastVideo currently offers: (with more to come)
 
-- [NEW!] [Sliding Tile Attention](https://hao-ai-lab.github.io/blogs/sta/).
+- [NEW!] V1 inference API available. Full announcement coming soon!
+- [Sliding Tile Attention](https://hao-ai-lab.github.io/blogs/sta/).
 - FastHunyuan and FastMochi: consistency distilled video diffusion models for 8x inference speedup.
 - First open distillation recipes for video DiT, based on [PCM](https://github.com/G-U-N/Phased-Consistency-Model).
 - Support distilling/finetuning/inferencing state-of-the-art open video DiTs: 1. Mochi 2. Hunyuan.
@@ -43,14 +44,31 @@ Dev in progress and highly experimental.
 
 ## Documentation
 
-% How to start using vLLM?
+% How to start using FastVideo?
 
 :::{toctree}
 :caption: Getting Started
 :maxdepth: 1
 
 getting_started/installation
-getting_started/examples/examples_index
+<!-- getting_started/examples/examples_index -->
+:::
+
+:::{toctree}
+:caption: Inference
+:maxdepth: 1
+
+inference/examples/examples_inference_index
+inference/v0_inference
+:::
+
+:::{toctree}
+:caption: Training
+:maxdepth: 1
+
+training/data_preprocess
+training/distillation
+training/finetune
 :::
 
 % What is STA Kernel?
@@ -60,27 +78,22 @@ getting_started/examples/examples_index
 :maxdepth: 1
 
 sliding_tile_attention/installation
-sliding_tile_attention/usage
-sliding_tile_attention/test
 sliding_tile_attention/demo
 :::
 
 :::{toctree}
-:caption: Inference
+:caption: Design
 :maxdepth: 1
-
-inference/wanvideo
-inference/stepvideo
-inference/hunyuanvideo
-inference/fasthunyuan
-inference/fastmochi
+design/overview
 :::
 
 :::{toctree}
 :caption: Developer Guide
-:maxdepth: 1
+:maxdepth: 2
 
-developer_guide/overview
+contributing/overview
+contributing/developer_env/index
+contributing/add_pipeline
 :::
 
 ## Indices and tables
