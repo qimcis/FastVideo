@@ -9,6 +9,7 @@ import torch
 
 from fastvideo.v1.fastvideo_args import FastVideoArgs
 from fastvideo.v1.logger import init_logger
+from fastvideo.v1.models.vaes.common import ParallelTiledVAE
 from fastvideo.v1.models.vision_utils import (get_default_height_width,
                                               load_image, normalize,
                                               numpy_to_pt, pil_to_numpy, resize)
@@ -27,8 +28,8 @@ class EncodingStage(PipelineStage):
     input format (e.g., latents).
     """
 
-    def __init__(self, vae) -> None:
-        self.vae = vae
+    def __init__(self, vae: ParallelTiledVAE) -> None:
+        self.vae: ParallelTiledVAE = vae
 
     def forward(
         self,
@@ -49,6 +50,8 @@ class EncodingStage(PipelineStage):
         # TODO(will): remove this once we add input/output validation for stages
         if image_path is None:
             raise ValueError("Image Path must be provided")
+        assert batch.height is not None
+        assert batch.width is not None
         latent_height = batch.height // self.vae.spatial_compression_ratio
         latent_width = batch.width // self.vae.spatial_compression_ratio
 
@@ -57,16 +60,15 @@ class EncodingStage(PipelineStage):
             image,
             vae_scale_factor=self.vae.spatial_compression_ratio,
             height=batch.height,
-            width=batch.width).to(batch.device, dtype=torch.float32)
+            width=batch.width).to(fastvideo_args.device, dtype=torch.float32)
         image = image.unsqueeze(2)
         video_condition = torch.cat([
             image,
             image.new_zeros(image.shape[0], image.shape[1],
-                            fastvideo_args.num_frames - 1, batch.height,
-                            batch.width)
+                            batch.num_frames - 1, batch.height, batch.width)
         ],
                                     dim=2)
-        video_condition = video_condition.to(device=batch.device,
+        video_condition = video_condition.to(device=fastvideo_args.device,
                                              dtype=torch.float32)
 
         # Setup VAE precision
@@ -106,9 +108,9 @@ class EncodingStage(PipelineStage):
         else:
             latent_condition = latent_condition * self.vae.scaling_factor
 
-        mask_lat_size = torch.ones(1, 1, fastvideo_args.num_frames,
-                                   latent_height, latent_width)
-        mask_lat_size[:, :, list(range(1, fastvideo_args.num_frames))] = 0
+        mask_lat_size = torch.ones(1, 1, batch.num_frames, latent_height,
+                                   latent_width)
+        mask_lat_size[:, :, list(range(1, batch.num_frames))] = 0
         first_frame_mask = mask_lat_size[:, :, 0:1]
         first_frame_mask = torch.repeat_interleave(
             first_frame_mask,

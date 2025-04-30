@@ -2,6 +2,7 @@
 
 import dataclasses
 import glob
+import json
 import os
 import time
 from abc import ABC, abstractmethod
@@ -10,13 +11,12 @@ from typing import Any, Generator, Iterable, List, Optional, Tuple, cast
 import torch
 import torch.nn as nn
 from safetensors.torch import load_file as safetensors_load_file
-from transformers import AutoImageProcessor, AutoTokenizer, PretrainedConfig
+from transformers import AutoImageProcessor, AutoTokenizer
 from transformers.utils import SAFE_WEIGHTS_INDEX_NAME
 
 from fastvideo.v1.fastvideo_args import FastVideoArgs
 from fastvideo.v1.logger import init_logger
-from fastvideo.v1.models.hf_transformer_utils import (get_diffusers_config,
-                                                      get_hf_config)
+from fastvideo.v1.models.hf_transformer_utils import get_diffusers_config
 from fastvideo.v1.models.loader.fsdp_load import load_fsdp_model
 from fastvideo.v1.models.loader.utils import set_default_torch_dtype
 from fastvideo.v1.models.loader.weight_utils import (
@@ -201,18 +201,34 @@ class TextEncoderLoader(ComponentLoader):
     def load(self, model_path: str, architecture: str,
              fastvideo_args: FastVideoArgs):
         """Load the text encoders based on the model path, architecture, and inference args."""
-        model_config: PretrainedConfig = get_hf_config(
-            model=model_path,
-            trust_remote_code=fastvideo_args.trust_remote_code,
-            revision=fastvideo_args.revision,
-            model_override_args=None,
-        )
+        # model_config: PretrainedConfig = get_hf_config(
+        #     model=model_path,
+        #     trust_remote_code=fastvideo_args.trust_remote_code,
+        #     revision=fastvideo_args.revision,
+        #     model_override_args=None,
+        # )
+        with open(os.path.join(model_path, "config.json")) as f:
+            model_config = json.load(f)
+        model_config.pop("_name_or_path", None)
+        model_config.pop("transformers_version", None)
+        model_config.pop("model_type", None)
+        model_config.pop("tokenizer_class", None)
+        model_config.pop("torch_dtype", None)
         logger.info("HF Model config: %s", model_config)
+
+        try:
+            encoder_config = fastvideo_args.text_encoder_config
+            encoder_config.update_model_arch(model_config)
+            encoder_precision = fastvideo_args.text_encoder_precision
+        except Exception:
+            encoder_config = fastvideo_args.text_encoder_config_2
+            encoder_config.update_model_arch(model_config)
+            encoder_precision = fastvideo_args.text_encoder_precision_2
 
         target_device = torch.device(fastvideo_args.device_str)
         # TODO(will): add support for other dtypes
-        return self.load_model(model_path, model_config, target_device,
-                               fastvideo_args.text_encoder_precision)
+        return self.load_model(model_path, encoder_config, target_device,
+                               encoder_precision)
 
     def load_model(self,
                    model_path: str,
@@ -251,17 +267,26 @@ class ImageEncoderLoader(TextEncoderLoader):
     def load(self, model_path: str, architecture: str,
              fastvideo_args: FastVideoArgs):
         """Load the text encoders based on the model path, architecture, and inference args."""
-        model_config: PretrainedConfig = get_hf_config(
-            model=model_path,
-            trust_remote_code=fastvideo_args.trust_remote_code,
-            revision=fastvideo_args.revision,
-            model_override_args=None,
-        )
+        # model_config: PretrainedConfig = get_hf_config(
+        #     model=model_path,
+        #     trust_remote_code=fastvideo_args.trust_remote_code,
+        #     revision=fastvideo_args.revision,
+        #     model_override_args=None,
+        # )
+        with open(os.path.join(model_path, "config.json")) as f:
+            model_config = json.load(f)
+        model_config.pop("_name_or_path", None)
+        model_config.pop("transformers_version", None)
+        model_config.pop("torch_dtype", None)
+        model_config.pop("model_type", None)
         logger.info("HF Model config: %s", model_config)
+
+        encoder_config = fastvideo_args.image_encoder_config
+        encoder_config.update_model_arch(model_config)
 
         target_device = torch.device(fastvideo_args.device_str)
         # TODO(will): add support for other dtypes
-        return self.load_model(model_path, model_config, target_device,
+        return self.load_model(model_path, encoder_config, target_device,
                                fastvideo_args.image_encoder_precision)
 
 
@@ -311,9 +336,11 @@ class VAELoader(ComponentLoader):
         assert class_name is not None, "Model config does not contain a _class_name attribute. Only diffusers format is supported."
         config.pop("_diffusers_version")
 
+        vae_config = fastvideo_args.vae_config
+        vae_config.update_model_arch(config)
         vae_cls, _ = ModelRegistry.resolve_model_cls(class_name)
 
-        vae = vae_cls(**config).to(fastvideo_args.device)
+        vae = vae_cls(vae_config).to(fastvideo_args.device)
 
         # Find all safetensors files
         safetensors_list = glob.glob(
@@ -323,7 +350,8 @@ class VAELoader(ComponentLoader):
             safetensors_list
         ) == 1, f"Found {len(safetensors_list)} safetensors files in {model_path}"
         loaded = safetensors_load_file(safetensors_list[0])
-        vae.load_state_dict(loaded)
+        vae.load_state_dict(
+            loaded, strict=False)  # We might only load encoder or decoder
         dtype = PRECISION_TO_TYPE[fastvideo_args.vae_precision]
         vae = vae.eval().to(dtype)
 
@@ -336,13 +364,17 @@ class TransformerLoader(ComponentLoader):
     def load(self, model_path: str, architecture: str,
              fastvideo_args: FastVideoArgs):
         """Load the transformer based on the model path, architecture, and inference args."""
-        model_config = get_diffusers_config(model=model_path)
-        cls_name = model_config.pop("_class_name")
+        config = get_diffusers_config(model=model_path)
+        cls_name = config.pop("_class_name")
         if cls_name is None:
             raise ValueError(
                 "Model config does not contain a _class_name attribute. "
                 "Only diffusers format is supported.")
-        model_config.pop("_diffusers_version")
+        config.pop("_diffusers_version")
+
+        # Config from Diffusers supersedes fastvideo's model config
+        dit_config = fastvideo_args.dit_config
+        dit_config.update_model_arch(config)
 
         model_cls, _ = ModelRegistry.resolve_model_cls(cls_name)
 
@@ -361,7 +393,7 @@ class TransformerLoader(ComponentLoader):
         # Load the model using FSDP loader
         logger.info("Loading model from %s", cls_name)
         model = load_fsdp_model(model_cls=model_cls,
-                                init_params=model_config,
+                                init_params={"config": dit_config},
                                 weight_dir_list=safetensors_list,
                                 device=fastvideo_args.device,
                                 cpu_offload=fastvideo_args.use_cpu_offload,

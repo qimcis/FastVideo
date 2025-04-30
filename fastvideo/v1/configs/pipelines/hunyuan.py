@@ -1,21 +1,27 @@
 from dataclasses import dataclass
 
-from fastvideo.v1.configs.base import BaseConfig
+from fastvideo.v1.configs.models import DiTConfig, EncoderConfig, VAEConfig
+from fastvideo.v1.configs.models.dits import HunyuanVideoConfig
+from fastvideo.v1.configs.models.encoders import CLIPTextConfig, LlamaConfig
+from fastvideo.v1.configs.models.vaes import HunyuanVAEConfig
+from fastvideo.v1.configs.pipelines.base import PipelineConfig
 
 
 @dataclass
-class HunyuanConfig(BaseConfig):
+class HunyuanConfig(PipelineConfig):
     """Base configuration for HunYuan pipeline architecture."""
 
     # HunyuanConfig-specific parameters with defaults
+    # DiT
+    dit_config: DiTConfig = HunyuanVideoConfig()
+    # VAE
+    vae_config: VAEConfig = HunyuanVAEConfig()
     # Denoising stage
     embedded_cfg_scale: int = 6
     flow_shift: int = 7
-    num_inference_steps: int = 50
 
     # Text encoding stage
-    hidden_state_skip_layer: int = 2
-    text_len: int = 256
+    text_encoder_config: EncoderConfig = LlamaConfig()
 
     # Precision for each component
     precision: str = "bf16"
@@ -24,8 +30,12 @@ class HunyuanConfig(BaseConfig):
 
     # HunyuanConfig-specific added parameters
     # Secondary text encoder
+    text_encoder_config_2: EncoderConfig = CLIPTextConfig()
     text_encoder_precision_2: str = "fp16"
-    text_len_2: int = 77
+
+    def __post_init__(self):
+        self.vae_config.load_encoder = False
+        self.vae_config.load_decoder = True
 
 
 @dataclass
@@ -33,7 +43,6 @@ class FastHunyuanConfig(HunyuanConfig):
     """Configuration specifically optimized for FastHunyuan weights."""
 
     # Override HunyuanConfig defaults
-    num_inference_steps: int = 6
     flow_shift: int = 17
 
     # No need to re-specify guidance_scale or embedded_cfg_scale as they

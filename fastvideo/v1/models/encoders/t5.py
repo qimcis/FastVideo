@@ -26,8 +26,9 @@ from typing import Iterable, Optional, Set, Tuple
 import torch
 import torch.nn.functional as F
 from torch import nn
-from transformers import T5Config
 
+from fastvideo.v1.configs.models.encoders import T5Config
+from fastvideo.v1.configs.quantization import QuantizationConfig
 from fastvideo.v1.distributed import (get_tensor_model_parallel_rank,
                                       get_tensor_model_parallel_world_size)
 from fastvideo.v1.layers.activation import get_act_fn
@@ -35,11 +36,8 @@ from fastvideo.v1.layers.layernorm import RMSNorm
 from fastvideo.v1.layers.linear import (MergedColumnParallelLinear,
                                         QKVParallelLinear, RowParallelLinear)
 from fastvideo.v1.layers.vocab_parallel_embedding import VocabParallelEmbedding
+from fastvideo.v1.models.encoders.base import BaseEncoder
 from fastvideo.v1.models.loader.weight_utils import default_weight_loader
-
-
-class QuantizationConfig:
-    pass
 
 
 class AttentionType:
@@ -501,10 +499,10 @@ class T5Stack(nn.Module):
         return hidden_states
 
 
-class T5EncoderModel(nn.Module):
+class T5EncoderModel(BaseEncoder):
 
     def __init__(self, config: T5Config, prefix: str = ""):
-        super().__init__()
+        super().__init__(config)
 
         quant_config = None
 
@@ -589,10 +587,10 @@ class T5EncoderModel(nn.Module):
         return loaded_params
 
 
-class UMT5EncoderModel(nn.Module):
+class UMT5EncoderModel(BaseEncoder):
 
     def __init__(self, config: T5Config, prefix: str = ""):
-        super().__init__()
+        super().__init__(config)
 
         quant_config = None
 

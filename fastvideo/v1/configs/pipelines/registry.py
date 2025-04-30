@@ -3,9 +3,11 @@
 import os
 from typing import Callable, Dict, Optional, Type
 
-from fastvideo.v1.configs.base import BaseConfig
-from fastvideo.v1.configs.hunyuan import FastHunyuanConfig, HunyuanConfig
-from fastvideo.v1.configs.wan import WanI2V480PConfig, WanT2V480PConfig
+from fastvideo.v1.configs.pipelines.base import PipelineConfig
+from fastvideo.v1.configs.pipelines.hunyuan import (FastHunyuanConfig,
+                                                    HunyuanConfig)
+from fastvideo.v1.configs.pipelines.wan import (WanI2V480PConfig,
+                                                WanT2V480PConfig)
 from fastvideo.v1.logger import init_logger
 from fastvideo.v1.utils import (maybe_download_model_index,
                                 verify_model_config_and_directory)
@@ -13,8 +15,8 @@ from fastvideo.v1.utils import (maybe_download_model_index,
 logger = init_logger(__name__)
 
 # Registry maps specific model weights to their config classes
-WEIGHT_CONFIG_REGISTRY: Dict[str, Type[BaseConfig]] = {
-    "FastVideo/FastHunyuan-Diffusers": FastHunyuanConfig,
+WEIGHT_CONFIG_REGISTRY: Dict[str, Type[PipelineConfig]] = {
+    "FastVideo/FastHunyuan-diffusers": FastHunyuanConfig,
     "hunyuanvideo-community/HunyuanVideo": HunyuanConfig,
     "Wan-AI/Wan2.1-T2V-1.3B-Diffusers": WanT2V480PConfig,
     "Wan-AI/Wan2.1-I2V-14B-480P-Diffusers": WanI2V480PConfig
@@ -30,7 +32,7 @@ PIPELINE_DETECTOR: Dict[str, Callable[[str], bool]] = {
 }
 
 # Fallback configs when exact match isn't found but architecture is detected
-PIPELINE_FALLBACK_CONFIG: Dict[str, Type[BaseConfig]] = {
+PIPELINE_FALLBACK_CONFIG: Dict[str, Type[PipelineConfig]] = {
     "hunyuan":
     HunyuanConfig,  # Base Hunyuan config as fallback for any Hunyuan variant
     "wanpipeline":
@@ -41,7 +43,7 @@ PIPELINE_FALLBACK_CONFIG: Dict[str, Type[BaseConfig]] = {
 
 
 def get_pipeline_config_cls_for_name(
-        pipeline_name_or_path: str) -> Optional[type[BaseConfig]]:
+        pipeline_name_or_path: str) -> Optional[type[PipelineConfig]]:
     """Get the appropriate config class for specific pretrained weights."""
 
     if os.path.exists(pipeline_name_or_path):
@@ -65,7 +67,6 @@ def get_pipeline_config_cls_for_name(
 
     # If no match, try to use the fallback config
     fallback_config = None
-    print(pipeline_name)
     # Try to determine pipeline architecture for fallback
     for pipeline_type, detector in PIPELINE_DETECTOR.items():
         if detector(pipeline_name.lower()):
