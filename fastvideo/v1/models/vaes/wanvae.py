@@ -22,8 +22,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from fastvideo.v1.configs.models.vaes import WanVAEConfig
 from fastvideo.v1.layers.activation import get_act_fn
-from fastvideo.v1.models.utils import auto_attributes
 from fastvideo.v1.models.vaes.common import (DiagonalGaussianDistribution,
                                              ParallelTiledVAE)
 
@@ -781,96 +781,36 @@ class AutoencoderKLWan(nn.Module, ParallelTiledVAE):
 
     _supports_gradient_checkpointing = False
 
-    @auto_attributes
-    def __init__(self,
-                 base_dim: int = 96,
-                 z_dim: int = 16,
-                 dim_mult: Tuple[int, ...] = (1, 2, 4, 4),
-                 num_res_blocks: int = 2,
-                 attn_scales: Tuple[float, ...] = (),
-                 temperal_downsample: Tuple[bool, ...] = (False, True, True),
-                 dropout: float = 0.0,
-                 latents_mean: Tuple[float, ...] = (
-                     -0.7571,
-                     -0.7089,
-                     -0.9113,
-                     0.1075,
-                     -0.1745,
-                     0.9653,
-                     -0.1517,
-                     1.5508,
-                     0.4134,
-                     -0.0715,
-                     0.5517,
-                     -0.3632,
-                     -0.1922,
-                     -0.9497,
-                     0.2503,
-                     -0.2921,
-                 ),
-                 latents_std: Tuple[float, ...] = (
-                     2.8184,
-                     1.4541,
-                     2.3275,
-                     2.6558,
-                     1.2196,
-                     1.7708,
-                     2.6052,
-                     2.0743,
-                     3.2687,
-                     2.1526,
-                     2.8652,
-                     1.5579,
-                     1.6382,
-                     1.1253,
-                     2.8251,
-                     1.9160,
-                 ),
-                 load_encoder: bool = True,
-                 load_decoder: bool = True) -> None:
-        super().__init__()
+    def __init__(
+        self,
+        config: WanVAEConfig,
+    ) -> None:
+        nn.Module.__init__(self)
+        ParallelTiledVAE.__init__(self, config)
 
-        self.z_dim = z_dim
-        self.temperal_downsample = list(temperal_downsample)
-        self.temperal_upsample = list(temperal_downsample)[::-1]
-        self.latents_mean = list(latents_mean)
-        self.latents_std = list(latents_std)
-        self.scaling_factor = 1.0 / torch.tensor(self.config.latents_std).view(
-            1, self.config.z_dim, 1, 1, 1)
-        self.shift_factor = torch.tensor(self.config.latents_mean).view(
-            1, self.config.z_dim, 1, 1, 1)
+        self.z_dim = config.z_dim
+        self.temperal_downsample = list(config.temperal_downsample)
+        self.temperal_upsample = list(config.temperal_downsample)[::-1]
+        self.latents_mean = list(config.latents_mean)
+        self.latents_std = list(config.latents_std)
+        self.shift_factor = config.shift_factor
 
-        if load_encoder:
-            self.encoder = WanEncoder3d(base_dim, z_dim * 2, dim_mult,
-                                        num_res_blocks, attn_scales,
-                                        self.temperal_downsample, dropout)
-        self.quant_conv = WanCausalConv3d(z_dim * 2, z_dim * 2, 1)
-        self.post_quant_conv = WanCausalConv3d(z_dim, z_dim, 1)
+        if config.load_encoder:
+            self.encoder = WanEncoder3d(config.base_dim, self.z_dim * 2,
+                                        config.dim_mult, config.num_res_blocks,
+                                        config.attn_scales,
+                                        self.temperal_downsample,
+                                        config.dropout)
+        self.quant_conv = WanCausalConv3d(self.z_dim * 2, self.z_dim * 2, 1)
+        self.post_quant_conv = WanCausalConv3d(self.z_dim, self.z_dim, 1)
 
-        if load_decoder:
-            self.decoder = WanDecoder3d(base_dim, z_dim, dim_mult,
-                                        num_res_blocks, attn_scales,
-                                        self.temperal_upsample, dropout)
+        if config.load_decoder:
+            self.decoder = WanDecoder3d(config.base_dim, self.z_dim,
+                                        config.dim_mult, config.num_res_blocks,
+                                        config.attn_scales,
+                                        self.temperal_upsample, config.dropout)
 
-        self.use_tiling = True
-        self.use_temporal_tiling = False
-        self.use_parallel_tiling = False
-        self.spatial_compression_ratio = 8
-        self.temporal_compression_ratio = 4
-
-        # The minimal tile height and width for spatial tiling to be used
-        self.tile_sample_min_height = 256
-        self.tile_sample_min_width = 256
-        self.tile_sample_min_num_frames = 16
-
-        # The minimal distance between two spatial tiles
-        self.tile_sample_stride_height = 192
-        self.tile_sample_stride_width = 192
-        self.tile_sample_stride_num_frames = 12
-
-        # Whether to use the feature cache algorithm used by diffusers and Wan2.1
-        self.use_feature_cache = True  # default to True for best performance
-        ParallelTiledVAE.__init__(self)
+        self.use_feature_cache = config.use_feature_cache
 
     def clear_cache(self) -> None:
 
@@ -881,13 +821,15 @@ class AutoencoderKLWan(nn.Module, ParallelTiledVAE):
                     count += 1
             return count
 
-        self._conv_num = _count_conv3d(self.decoder)
-        self._conv_idx = 0
-        self._feat_map = [None] * self._conv_num
+        if self.config.load_decoder:
+            self._conv_num = _count_conv3d(self.decoder)
+            self._conv_idx = 0
+            self._feat_map = [None] * self._conv_num
         # cache encode
-        self._enc_conv_num = _count_conv3d(self.encoder)
-        self._enc_conv_idx = 0
-        self._enc_feat_map = [None] * self._enc_conv_num
+        if self.config.load_encoder:
+            self._enc_conv_num = _count_conv3d(self.encoder)
+            self._enc_conv_idx = 0
+            self._enc_feat_map = [None] * self._enc_conv_num
 
     def encode(self, x: torch.Tensor) -> torch.Tensor:
         if self.use_feature_cache:

@@ -21,10 +21,9 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.checkpoint
 
+from fastvideo.v1.configs.models.vaes import HunyuanVAEConfig
 from fastvideo.v1.layers.activation import get_act_fn
-from fastvideo.v1.models.utils import auto_attributes
 from fastvideo.v1.models.vaes.common import ParallelTiledVAE
 
 
@@ -773,94 +772,51 @@ class AutoencoderKLHunyuanVideo(nn.Module, ParallelTiledVAE):
 
     _supports_gradient_checkpointing = True
 
-    @auto_attributes
     def __init__(
         self,
-        in_channels: int = 3,
-        out_channels: int = 3,
-        latent_channels: int = 16,
-        down_block_types: Tuple[str, ...] = (
-            "HunyuanVideoDownBlock3D",
-            "HunyuanVideoDownBlock3D",
-            "HunyuanVideoDownBlock3D",
-            "HunyuanVideoDownBlock3D",
-        ),
-        up_block_types: Tuple[str, ...] = (
-            "HunyuanVideoUpBlock3D",
-            "HunyuanVideoUpBlock3D",
-            "HunyuanVideoUpBlock3D",
-            "HunyuanVideoUpBlock3D",
-        ),
-        block_out_channels: Tuple[int, ...] = (128, 256, 512, 512),
-        layers_per_block: int = 2,
-        act_fn: str = "silu",
-        norm_num_groups: int = 32,
-        scaling_factor: float = 0.476986,
-        spatial_compression_ratio: int = 8,
-        temporal_compression_ratio: int = 4,
-        mid_block_add_attention: bool = True,
-        load_encoder: bool = True,
-        load_decoder: bool = True,
+        config: HunyuanVAEConfig,
     ) -> None:
-        super().__init__()
+        nn.Module.__init__(self)
+        ParallelTiledVAE.__init__(self, config)
 
         # TODO(will): only pass in config. We do this by manually defining a
         # config for hunyuan vae
-        self.block_out_channels = block_out_channels
+        self.block_out_channels = config.block_out_channels
 
-        if load_encoder:
+        if config.load_encoder:
             self.encoder = HunyuanVideoEncoder3D(
-                in_channels=in_channels,
-                out_channels=latent_channels,
-                down_block_types=down_block_types,
-                block_out_channels=block_out_channels,
-                layers_per_block=layers_per_block,
-                norm_num_groups=norm_num_groups,
-                act_fn=act_fn,
+                in_channels=config.in_channels,
+                out_channels=config.latent_channels,
+                down_block_types=config.down_block_types,
+                block_out_channels=config.block_out_channels,
+                layers_per_block=config.layers_per_block,
+                norm_num_groups=config.norm_num_groups,
+                act_fn=config.act_fn,
                 double_z=True,
-                mid_block_add_attention=mid_block_add_attention,
-                temporal_compression_ratio=temporal_compression_ratio,
-                spatial_compression_ratio=spatial_compression_ratio,
+                mid_block_add_attention=config.mid_block_add_attention,
+                temporal_compression_ratio=config.temporal_compression_ratio,
+                spatial_compression_ratio=config.spatial_compression_ratio,
             )
-            self.quant_conv = nn.Conv3d(2 * latent_channels,
-                                        2 * latent_channels,
+            self.quant_conv = nn.Conv3d(2 * config.latent_channels,
+                                        2 * config.latent_channels,
                                         kernel_size=1)
 
-        if load_decoder:
+        if config.load_decoder:
             self.decoder = HunyuanVideoDecoder3D(
-                in_channels=latent_channels,
-                out_channels=out_channels,
-                up_block_types=up_block_types,
-                block_out_channels=block_out_channels,
-                layers_per_block=layers_per_block,
-                norm_num_groups=norm_num_groups,
-                act_fn=act_fn,
-                time_compression_ratio=temporal_compression_ratio,
-                spatial_compression_ratio=spatial_compression_ratio,
-                mid_block_add_attention=mid_block_add_attention,
+                in_channels=config.latent_channels,
+                out_channels=config.out_channels,
+                up_block_types=config.up_block_types,
+                block_out_channels=config.block_out_channels,
+                layers_per_block=config.layers_per_block,
+                norm_num_groups=config.norm_num_groups,
+                act_fn=config.act_fn,
+                time_compression_ratio=config.temporal_compression_ratio,
+                spatial_compression_ratio=config.spatial_compression_ratio,
+                mid_block_add_attention=config.mid_block_add_attention,
             )
-            self.post_quant_conv = nn.Conv3d(latent_channels,
-                                             latent_channels,
+            self.post_quant_conv = nn.Conv3d(config.latent_channels,
+                                             config.latent_channels,
                                              kernel_size=1)
-
-        # When decoding spatially large video latents, the memory requirement is very high. By breaking the video latent
-        # frames spatially into smaller tiles and performing multiple forward passes for decoding, and then blending the
-        # intermediate tiles together, the memory requirement can be lowered.
-        self.use_tiling = True
-        self.use_temporal_tiling = True
-        self.use_parallel_tiling = True
-        self.scaling_factor = scaling_factor
-
-        # The minimal tile height and width for spatial tiling to be used
-        self.tile_sample_min_height = 256
-        self.tile_sample_min_width = 256
-        self.tile_sample_min_num_frames = 16
-
-        # The minimal distance between two spatial tiles
-        self.tile_sample_stride_height = 192
-        self.tile_sample_stride_width = 192
-        self.tile_sample_stride_num_frames = 12
-        ParallelTiledVAE.__init__(self)
 
     def _encode(self, x: torch.Tensor) -> torch.Tensor:
         x = self.encoder(x)

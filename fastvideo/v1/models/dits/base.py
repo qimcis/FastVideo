@@ -5,19 +5,20 @@ from typing import List, Optional, Tuple, Union
 import torch
 from torch import nn
 
+from fastvideo.v1.configs.models import DiTConfig
 from fastvideo.v1.platforms import _Backend
 
 
 # TODO
 class BaseDiT(nn.Module, ABC):
     _fsdp_shard_conditions: list = []
-    attention_head_dim: int | None = None
     _param_names_mapping: dict
     hidden_size: int
     num_attention_heads: int
+    num_channels_latents: int
     # always supports torch_sdpa
-    _supported_attention_backends: Tuple[_Backend,
-                                         ...] = (_Backend.TORCH_SDPA, )
+    _supported_attention_backends: Tuple[
+        _Backend, ...] = DiTConfig()._supported_attention_backends
 
     def __init_subclass__(cls) -> None:
         required_class_attrs = [
@@ -30,8 +31,9 @@ class BaseDiT(nn.Module, ABC):
                     f"Subclasses of BaseDiT must define '{attr}' class variable"
                 )
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, config: DiTConfig, **kwargs) -> None:
         super().__init__()
+        self.config = config
         if not self.supported_attention_backends:
             raise ValueError(
                 f"Subclass {self.__class__.__name__} must define _supported_attention_backends"
@@ -49,7 +51,9 @@ class BaseDiT(nn.Module, ABC):
         pass
 
     def __post_init__(self) -> None:
-        required_attrs = ["hidden_size", "num_attention_heads"]
+        required_attrs = [
+            "hidden_size", "num_attention_heads", "num_channels_latents"
+        ]
         for attr in required_attrs:
             if not hasattr(self, attr):
                 raise AttributeError(
