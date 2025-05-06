@@ -77,3 +77,15 @@ class WanI2V480PConfig(WanT2V480PConfig):
     def __post_init__(self):
         self.vae_config.load_encoder = True
         self.vae_config.load_decoder = True
+
+
+@dataclass
+class WanT2V720PConfig(WanT2V480PConfig):
+    """Base configuration for Wan T2V 14B 720P pipeline architecture."""
+
+    # WanConfig-specific parameters with defaults
+    # Video parameters
+    use_cpu_offload: bool = True
+
+    # Denoising stage
+    flow_shift: int = 5
