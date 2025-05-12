@@ -7,6 +7,7 @@ diffusion models.
 """
 
 import gc
+import math
 import os
 import time
 from typing import Any, Dict, List, Optional, Union
@@ -180,12 +181,46 @@ class VideoGenerator:
                 f"height={sampling_param.height}, width={sampling_param.width}, "
                 f"num_frames={sampling_param.num_frames}")
 
-        if (
-                sampling_param.num_frames - 1
-        ) % fastvideo_args.vae_config.arch_config.temporal_compression_ratio != 0:
-            raise ValueError(
-                f"num_frames-1 must be a multiple of {fastvideo_args.vae_config.arch_config.temporal_compression_ratio}, got {sampling_param.num_frames}"
-            )
+        temporal_scale_factor = fastvideo_args.vae_config.arch_config.temporal_compression_ratio
+        num_frames = sampling_param.num_frames
+        num_gpus = fastvideo_args.num_gpus
+        use_temporal_scaling_frames = fastvideo_args.vae_config.use_temporal_scaling_frames
+
+        # Adjust number of frames based on number of GPUs
+        if use_temporal_scaling_frames:
+            orig_latent_num_frames = (num_frames -
+                                      1) // temporal_scale_factor + 1
+        else:  # stepvideo only
+            orig_latent_num_frames = sampling_param.num_frames // 17 * 3
+
+        if orig_latent_num_frames % fastvideo_args.num_gpus != 0:
+            # Adjust latent frames to be divisible by number of GPUs
+            if sampling_param.num_frames_round_down:
+                # Ensure we have at least 1 batch per GPU
+                new_latent_num_frames = max(
+                    1, (orig_latent_num_frames // num_gpus)) * num_gpus
+            else:
+                new_latent_num_frames = math.ceil(
+                    orig_latent_num_frames / num_gpus) * num_gpus
+
+            if use_temporal_scaling_frames:
+                # Convert back to number of frames, ensuring num_frames-1 is a multiple of temporal_scale_factor
+                new_num_frames = (new_latent_num_frames -
+                                  1) * temporal_scale_factor + 1
+            else:  # stepvideo only
+                # Find the least common multiple of 3 and num_gpus
+                divisor = math.lcm(3, num_gpus)
+                # Round up to the nearest multiple of this LCM
+                new_latent_num_frames = (
+                    (new_latent_num_frames + divisor - 1) // divisor) * divisor
+                # Convert back to actual frames using the StepVideo formula
+                new_num_frames = new_latent_num_frames // 3 * 17
+
+            logger.info(
+                "Adjusting number of frames from %s to %s based on number of GPUs (%s)",
+                sampling_param.num_frames, new_num_frames,
+                fastvideo_args.num_gpus)
+            sampling_param.num_frames = new_num_frames
 
         # Calculate sizes
         target_height = align_to(sampling_param.height, 16)
