@@ -5,6 +5,7 @@ import multiprocessing as mp
 import os
 import signal
 import sys
+from multiprocessing.connection import Connection
 from typing import Any, Dict, Optional, TextIO, cast
 
 import psutil
@@ -29,7 +30,7 @@ RESET = '\033[0;0m'
 class Worker:
 
     def __init__(self, fastvideo_args: FastVideoArgs, local_rank: int,
-                 rank: int, pipe, master_port: int):
+                 rank: int, pipe: Connection, master_port: int):
         self.fastvideo_args = fastvideo_args
         self.local_rank = local_rank
         self.rank = rank
@@ -91,6 +92,9 @@ class Worker:
                         fastvideo_args: FastVideoArgs) -> ForwardBatch:
         output_batch = self.pipeline.forward(forward_batch, self.fastvideo_args)
         return cast(ForwardBatch, output_batch)
+
+    def set_lora_adapter(self, lora_nickname: str, lora_path: str) -> None:
+        self.pipeline.set_lora_adapter(lora_nickname, lora_path)
 
     def shutdown(self) -> Dict[str, Any]:
         """Gracefully shut down the worker process"""
@@ -191,7 +195,7 @@ def init_worker_distributed_environment(
 
 
 def run_worker_process(fastvideo_args: FastVideoArgs, local_rank: int,
-                       rank: int, pipe, master_port: int):
+                       rank: int, pipe: Connection, master_port: int):
     # Add process-specific prefix to stdout and stderr
     process_name = mp.current_process().name
     pid = os.getpid()
