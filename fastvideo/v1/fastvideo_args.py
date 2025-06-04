@@ -92,7 +92,7 @@ class FastVideoArgs:
     lora_target_names: Optional[List[
         str]] = None  # can restrict list of layers to adapt, e.g. ["q_proj"]
 
-    # STA (Spatial-Temporal Attention) parameters
+    # STA parameters
     mask_strategy_file_path: Optional[str] = None
     enable_torch_compile: bool = False
 
