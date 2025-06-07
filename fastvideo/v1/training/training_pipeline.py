@@ -54,7 +54,7 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
         self.device = training_args.device
         world_group = get_world_group()
         self.world_size = world_group.world_size
-        self.rank = world_group.rank
+        self.global_rank = world_group.rank
         self.sp_group = get_sp_group()
         self.rank_in_sp_group = self.sp_group.rank_in_group
         self.sp_world_size = self.sp_group.world_size
@@ -94,8 +94,6 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
         self.train_dataset = ParquetVideoTextDataset(
             training_args.data_path,
             batch_size=training_args.train_batch_size,
-            rank=self.rank,
-            world_size=self.world_size,
             cfg_rate=training_args.cfg,
             num_latent_t=training_args.num_latent_t)
 
@@ -126,7 +124,7 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
         # TODO(will): is there a cleaner way to track epochs?
         self.current_epoch = 0
 
-        if self.rank == 0:
+        if self.global_rank == 0:
             project = training_args.tracker_project_name or "fastvideo"
             wandb.init(project=project, config=training_args)
 
@@ -175,8 +173,6 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
         validation_dataset = ParquetVideoTextDataset(
             training_args.validation_prompt_dir,
             batch_size=1,
-            rank=self.rank,
-            world_size=self.world_size,
             cfg_rate=training_args.cfg,
             num_latent_t=training_args.num_latent_t,
             validation=True)
@@ -195,12 +191,6 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
             drop_last=False)
 
         transformer.eval()
-
-        # Add the transformer to the validation pipeline
-        self.validation_pipeline.add_module("transformer", transformer)
-        # TODO(Peiyuan): those logic should be inside add_module
-        self.validation_pipeline.latent_preparation_stage.transformer = transformer  # type: ignore[attr-defined]
-        self.validation_pipeline.denoising_stage.transformer = transformer  # type: ignore[attr-defined]
 
         # Process each validation prompt
         videos = []
@@ -277,7 +267,7 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
         # Only sp_group leaders (rank_in_sp_group == 0) need to send their
         # results to global rank 0
         if self.rank_in_sp_group == 0:
-            if self.rank == 0:
+            if self.global_rank == 0:
                 # Global rank 0 collects results from all sp_group leaders
                 all_videos = videos  # Start with own results
                 all_captions = captions
@@ -457,7 +447,7 @@ class TrainingPipeline(ComposedPipelineBase, ABC):
                                             abs(numerical_grad), 1e-3)
                 absolute_errors.append(abs_error)
 
-                if self.rank == 0:
+                if self.global_rank == 0:
                     logger.info(
                         "%s[%s]: analytical=%.5f, numerical=%.5f, abs_error=%.2e, rel_error=%.2f%%",
                         name, check_idx, analytical_grad, numerical_grad,
