@@ -14,6 +14,8 @@ from fastvideo.v1.logger import init_logger
 from fastvideo.v1.models.vision_utils import load_image
 from fastvideo.v1.pipelines.pipeline_batch_info import ForwardBatch
 from fastvideo.v1.pipelines.stages.base import PipelineStage
+from fastvideo.v1.pipelines.stages.validators import StageValidators as V
+from fastvideo.v1.pipelines.stages.validators import VerificationResult
 
 logger = init_logger(__name__)
 
@@ -71,3 +73,19 @@ class ImageEncodingStage(PipelineStage):
             torch.cuda.empty_cache()
 
         return batch
+
+    def verify_input(self, batch: ForwardBatch,
+                     fastvideo_args: FastVideoArgs) -> VerificationResult:
+        """Verify image encoding stage inputs."""
+        result = VerificationResult()
+        result.add_check("image_path", batch.image_path, V.string_not_empty)
+        result.add_check("image_embeds", batch.image_embeds, V.is_list)
+        return result
+
+    def verify_output(self, batch: ForwardBatch,
+                      fastvideo_args: FastVideoArgs) -> VerificationResult:
+        """Verify image encoding stage outputs."""
+        result = VerificationResult()
+        result.add_check("image_embeds", batch.image_embeds,
+                         V.list_of_tensors_dims(3))
+        return result
