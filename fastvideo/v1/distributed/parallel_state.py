@@ -750,6 +750,7 @@ def init_distributed_environment(
     distributed_init_method: str = "env://",
     local_rank: int = 0,
     backend: str = "nccl",
+    device_id: Optional[torch.device] = None,
 ):
     logger.debug(
         "world_size=%d rank=%d local_rank=%d "
@@ -764,7 +765,8 @@ def init_distributed_environment(
             backend=backend,
             init_method=distributed_init_method,
             world_size=world_size,
-            rank=rank)
+            rank=rank,
+            device_id=device_id)
     # set the local rank
     # local_rank is not available in torch ProcessGroup,
     # see https://github.com/pytorch/pytorch/issues/122816
@@ -921,13 +923,15 @@ def maybe_init_distributed_environment_and_model_parallel(
     local_rank = int(os.environ.get("LOCAL_RANK", 0))
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     rank = int(os.environ.get("RANK", 0))
+    device = torch.device(f"cuda:{local_rank}")
+    torch.cuda.set_device(device)
 
-    torch.cuda.set_device(local_rank)
     init_distributed_environment(
         world_size=world_size,
         rank=rank,
         local_rank=local_rank,
-        distributed_init_method=distributed_init_method)
+        distributed_init_method=distributed_init_method,
+        device_id=device)
     initialize_model_parallel(tensor_model_parallel_size=tp_size,
                               sequence_model_parallel_size=sp_size)
 
