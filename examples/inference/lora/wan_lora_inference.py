@@ -1,7 +1,7 @@
 from fastvideo import VideoGenerator
 from fastvideo.v1.configs.sample import SamplingParam
 
-OUTPUT_PATH = "./lora"
+OUTPUT_PATH = "./lora_out"
 def main():
     # Initialize VideoGenerator with the Wan model
     generator = VideoGenerator.from_pretrained(
@@ -32,7 +32,7 @@ def main():
     )
     del generator
     
-    # Until FSDP resharding bug is fixed, multi-lora requires reloading the model
+    # Until FSDP resharding bug is fixed, multi-lora requires reloading the model or disabling FSDP
     # see https://github.com/pytorch/pytorch/issues/157209
     generator = VideoGenerator.from_pretrained(
         "Wan-AI/Wan2.1-T2V-1.3B-Diffusers",
