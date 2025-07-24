@@ -61,7 +61,6 @@ class LoRAPipeline(ComposedPipelineBase):
             logger.info("Using LoRA training with rank %d and alpha %d",
                         self.lora_rank, self.lora_alpha)
             if self.lora_target_modules is None:
-                # Possible names for q, k, v, o
                 self.lora_target_modules = [
                     "q_proj", "k_proj", "v_proj", "o_proj", "to_q", "to_k",
                     "to_v", "to_out", "to_qkv"
@@ -80,6 +79,28 @@ class LoRAPipeline(ComposedPipelineBase):
         return any(target_name in module_name
                    for target_name in self.lora_target_modules)
 
+    def set_trainable(self) -> None:
+
+        is_lora_training = self.training_mode and getattr(
+            self.fastvideo_args, "lora_training", False)
+        if not is_lora_training:
+            super().set_trainable()
+            return
+
+        self.modules["transformer"].requires_grad_(False)
+        device_mesh = init_device_mesh("cuda", (dist.get_world_size(), 1),
+                                       mesh_dim_names=["fake", "replicate"])
+        for name, layer in self.lora_layers.items():
+            # Enable grads for lora weights only
+            # Must convert to DTensor for compatibility with other FSDP modules in grad calculation
+            layer.lora_A.requires_grad_(True)
+            layer.lora_B.requires_grad_(True)
+            layer.base_layer.requires_grad_(False)
+            layer.lora_A = nn.Parameter(
+                DTensor.from_local(layer.lora_A, device_mesh=device_mesh))
+            layer.lora_B = nn.Parameter(
+                DTensor.from_local(layer.lora_B, device_mesh=device_mesh))
+
     def convert_to_lora_layers(self) -> None:
         """
         Unified method to convert the transformer to a LoRA transformer.
@@ -87,10 +108,7 @@ class LoRAPipeline(ComposedPipelineBase):
         if self.lora_initialized:
             return
         self.lora_initialized = True
-        is_lora_training = self.training_mode and getattr(
-            self.fastvideo_args, "lora_training", False)
-        if is_lora_training:
-            self.modules["transformer"].requires_grad_(False)
+        converted_count = 0
         for name, layer in self.modules["transformer"].named_modules():
             if not self.is_target_layer(name):
                 continue
@@ -110,18 +128,8 @@ class LoRAPipeline(ComposedPipelineBase):
             if layer is not None:
                 self.lora_layers[name] = layer
                 replace_submodule(self.modules["transformer"], name, layer)
-        if is_lora_training:
-            device_mesh = init_device_mesh("cuda", (dist.get_world_size(), 1),
-                                           mesh_dim_names=["fake", "replicate"])
-            for name, layer in self.lora_layers.items():
-                # Enable grads for lora weights only
-                layer.lora_A.requires_grad_(True)
-                layer.lora_B.requires_grad_(True)
-                # Must convert to DTensor for compatibility with other FSDP modules in grad calculation
-                layer.lora_A = nn.Parameter(
-                    DTensor.from_local(layer.lora_A, device_mesh=device_mesh))
-                layer.lora_B = nn.Parameter(
-                    DTensor.from_local(layer.lora_B, device_mesh=device_mesh))
+                converted_count += 1
+        logger.info("Converted %d layers to LoRA layers", converted_count)
 
     def set_lora_adapter(self,
                          lora_nickname: str,
@@ -154,9 +162,8 @@ class LoRAPipeline(ComposedPipelineBase):
             to_merge_params: defaultdict[Hashable,
                                          dict[Any, Any]] = defaultdict(dict)
             for name, weight in lora_state_dict.items():
-                name = ".".join(
-                    name.split(".")
-                    [1:-1])  # remove the transformer prefix and .weight suffix
+                name = name.replace("diffusion_model.", "")
+                name = name.replace(".weight", "")
                 name, _, _ = lora_param_names_mapping_fn(name)
                 target_name, merge_index, num_params_to_merge = param_names_mapping_fn(
                     name)

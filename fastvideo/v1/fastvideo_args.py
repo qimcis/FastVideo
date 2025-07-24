@@ -62,8 +62,7 @@ class FastVideoArgs:
     lora_path: str | None = None
     lora_nickname: str = "default"  # for swapping adapters in the pipeline
     # can restrict layers to adapt, e.g. ["q_proj"]
-    # For inference, will be consistent with loaded adapter by default
-    # For training, will adapt only q, k, v, o by default.
+    # Will adapt only q, k, v, o by default.
     lora_target_modules: list[str] | None = None
 
     output_type: str = "pil"
