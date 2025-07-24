@@ -49,6 +49,10 @@ vsa_available = is_vsa_available()
 logger = init_logger(__name__)
 
 
+def _get_trainable_params(model: torch.nn.Module) -> int:
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 class TrainingPipeline(LoRAPipeline, ABC):
     """
     A pipeline for training a model. All training pipelines should inherit from this class.
@@ -100,7 +104,6 @@ class TrainingPipeline(LoRAPipeline, ABC):
 
         # Set random seeds for deterministic training
         set_random_seed(self.seed)
-        self.transformer.requires_grad_(True)
         self.transformer.train()
         if training_args.enable_gradient_checkpointing_type is not None:
             self.transformer = apply_activation_checkpointing(
@@ -109,6 +112,7 @@ class TrainingPipeline(LoRAPipeline, ABC):
                 enable_gradient_checkpointing_type)
 
         noise_scheduler = self.modules["scheduler"]
+        self.set_trainable()
         params_to_optimize = self.transformer.parameters()
         params_to_optimize = list(
             filter(lambda p: p.requires_grad, params_to_optimize))
@@ -442,11 +446,7 @@ class TrainingPipeline(LoRAPipeline, ABC):
         assert self.training_args is not None
         if not self.post_init_called:
             self.post_init()
-
-        num_trainable_params = 0
-        for name, param in self.transformer.named_parameters():
-            if param.requires_grad:
-                num_trainable_params += param.numel()
+        num_trainable_params = _get_trainable_params(self.transformer)
         logger.info("Starting training with %s B trainable parameters",
                     round(num_trainable_params / 1e9, 3))
 
@@ -532,8 +532,11 @@ class TrainingPipeline(LoRAPipeline, ABC):
             if self.training_args.log_validation and step % self.training_args.validation_steps == 0:
                 self._log_validation(self.transformer, self.training_args, step)
                 gpu_memory_usage = torch.cuda.memory_allocated() / 1024**2
-                logger.info("GPU memory usage after validation: %s MB",
-                            gpu_memory_usage)
+                trainable_params = round(
+                    _get_trainable_params(self.transformer) / 1e9, 3)
+                logger.info(
+                    "GPU memory usage after validation: %s MB, trainable params: %sB",
+                    gpu_memory_usage, trainable_params)
 
         wandb.finish()
         save_checkpoint(self.transformer, self.global_rank,
@@ -568,11 +571,8 @@ class TrainingPipeline(LoRAPipeline, ABC):
                     self.training_args.gradient_accumulation_steps)
         logger.info("  Total optimization steps = %s",
                     self.training_args.max_train_steps)
-        logger.info(
-            "  Total training parameters per FSDP shard = %s B",
-            sum(p.numel()
-                for p in self.transformer.parameters() if p.requires_grad) /
-            1e9)
+        logger.info("  Total training parameters per FSDP shard = %s B",
+                    round(_get_trainable_params(self.transformer) / 1e9, 3))
         # print dtype
         logger.info("  Master weight dtype: %s",
                     self.transformer.parameters().__next__().dtype)
