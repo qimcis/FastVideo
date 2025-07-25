@@ -95,6 +95,9 @@ class FastVideoArgs:
         "vae": True,
     })
 
+    # # DMD parameters
+    # dmd_denoising_steps: List[int] | None = field(default=None)
+
     @property
     def training_mode(self) -> bool:
         return not self.inference_mode
