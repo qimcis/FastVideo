@@ -95,3 +95,19 @@ class WanI2V720PConfig(WanI2V480PConfig):
 
     # Denoising stage
     flow_shift: int = 5
+
+
+@dataclass
+class FastWanT2V480PConfig(WanT2V480PConfig):
+    """Base configuration for FastWan T2V 1.3B 480P pipeline architecture with DMD"""
+
+    # WanConfig-specific parameters with defaults
+
+    # Denoising stage
+    flow_shift: int = 8
+    dmd_denoising_steps: list[int] | None = field(
+        default_factory=lambda: [1000, 757, 522])
+
+    def __post_init__(self) -> None:
+        self.vae_config.load_encoder = True
+        self.vae_config.load_decoder = True

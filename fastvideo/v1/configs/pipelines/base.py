@@ -83,6 +83,9 @@ class PipelineConfig:
     STA_mode: STA_Mode = STA_Mode.STA_INFERENCE
     skip_time_steps: int = 15
 
+    # DMD parameters
+    dmd_denoising_steps: list[int] | None = field(default=None)
+
     # Compilation
     # enable_torch_compile: bool = False
 
@@ -198,6 +201,15 @@ class PipelineConfig:
             default=PipelineConfig.timesteps_scale,
             help=
             "Bool for applying scheduler scale in set_timesteps, used in stepvideo",
+        )
+
+        # DMD parameters
+        parser.add_argument(
+            f"--{prefix_with_dot}dmd-denoising-steps",
+            type=parse_int_list,
+            default=PipelineConfig.dmd_denoising_steps,
+            help=
+            "Comma-separated list of denoising steps (e.g., '1000,757,522')",
         )
 
         # Add VAE configuration arguments
@@ -381,3 +393,10 @@ class SlidingTileAttnConfig(PipelineConfig):
     # Additional configuration specific to sliding tile attention
     pad_to_square: bool = False
     use_overlap_optimization: bool = True
+
+
+def parse_int_list(value: str) -> list[int]:
+    """Parse a comma-separated string of integers into a list."""
+    if not value:
+        return []
+    return [int(x.strip()) for x in value.split(",")]
