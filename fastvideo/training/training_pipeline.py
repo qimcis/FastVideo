@@ -14,7 +14,6 @@ import torch
 import torch.distributed as dist
 import torchvision
 from diffusers import FlowMatchEulerDiscreteScheduler
-from diffusers.optimization import get_scheduler
 from einops import rearrange
 from torch.utils.data import DataLoader
 from torchdata.stateful_dataloader import StatefulDataLoader
@@ -39,8 +38,9 @@ from fastvideo.training.activation_checkpoint import (
     apply_activation_checkpointing)
 from fastvideo.training.training_utils import (
     clip_grad_norm_while_handling_failing_dtensor_cases,
-    compute_density_for_timestep_sampling, get_sigmas, load_checkpoint,
-    normalize_dit_input, save_checkpoint, shard_latents_across_sp)
+    compute_density_for_timestep_sampling, get_scheduler, get_sigmas,
+    load_checkpoint, normalize_dit_input, save_checkpoint,
+    shard_latents_across_sp)
 from fastvideo.utils import is_vsa_available, set_random_seed, shallow_asdict
 
 import wandb  # isort: skip
@@ -134,6 +134,7 @@ class TrainingPipeline(LoRAPipeline, ABC):
             num_training_steps=training_args.max_train_steps,
             num_cycles=training_args.lr_num_cycles,
             power=training_args.lr_power,
+            min_lr_ratio=training_args.min_lr_ratio,
             last_epoch=self.init_steps - 1,
         )
 
