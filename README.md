@@ -151,11 +151,10 @@ If you find FastVideo useful, please considering citing our work:
   year         = {2024},
 }
 
-@article{zhang2025faster,
-  title={Faster video diffusion with trainable sparse attention},
-  author={Zhang, Peiyuan and Huang, Haofeng and Chen, Yongqi and Lin, Will and Liu, Zhengzhong and Stoica, Ion and Xing, Eric P and Zhang, Hao},
-  journal={arXiv e-prints},
-  pages={arXiv--2505},
+@article{zhang2025vsa,
+  title={VSA: Faster Video Diffusion with Trainable Sparse Attention},
+  author={Zhang, Peiyuan and Huang, Haofeng and Chen, Yongqi and Lin, Will and Liu, Zhengzhong and Stoica, Ion and Xing, Eric and Zhang, Hao},
+  journal={arXiv preprint arXiv:2505.13389},
   year={2025}
 }
 
