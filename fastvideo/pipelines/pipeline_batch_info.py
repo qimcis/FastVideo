@@ -93,6 +93,7 @@ class ForwardBatch:
     # Scheduler parameters
     num_inference_steps: int = 50
     guidance_scale: float = 1.0
+    guidance_scale_2: float | None = None
     guidance_rescale: float = 0.0
     eta: float = 0.0
     sigmas: list[float] | None = None
@@ -136,6 +137,8 @@ class ForwardBatch:
             self.do_classifier_free_guidance = True
         if self.negative_prompt_embeds is None:
             self.negative_prompt_embeds = []
+        if self.guidance_scale_2 is None:
+            self.guidance_scale_2 = self.guidance_scale
 
     def __str__(self):
         return pprint.pformat(asdict(self), indent=2, width=120)
