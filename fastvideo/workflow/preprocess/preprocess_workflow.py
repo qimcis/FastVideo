@@ -5,11 +5,15 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 
 from fastvideo.configs.configs import PreprocessConfig
+from fastvideo.dataset.dataloader.schema import (pyarrow_schema_i2v,
+                                                 pyarrow_schema_t2v)
 from fastvideo.fastvideo_args import FastVideoArgs, WorkloadType
 from fastvideo.logger import init_logger
 from fastvideo.pipelines.pipeline_registry import PipelineType
 from fastvideo.workflow.preprocess.components import (
-    PreprocessingDataValidator, VideoForwardBatchBuilder)
+    ParquetDatasetSaver, PreprocessingDataValidator, VideoForwardBatchBuilder)
+from fastvideo.workflow.preprocess.record_schema import (
+    basic_t2v_record_creator, i2v_record_creator)
 from fastvideo.workflow.workflow_base import WorkflowBase
 
 logger = init_logger(__name__)
@@ -41,6 +45,7 @@ class PreprocessWorkflow(WorkflowBase):
         # training dataset
         training_dataset = load_dataset(preprocess_config.dataset_path,
                                         split="train")
+        # set load_from_cache_file to False to check filter stats
         training_dataset = training_dataset.filter(raw_data_validator)
         # we do not use collate_fn here because we use iterable-style Dataset
         # and want to keep the original type of the dataset
@@ -72,9 +77,27 @@ class PreprocessWorkflow(WorkflowBase):
         self.add_component("validation_dataloader", validation_dataloader)
 
         # forward batch builder
-        video_forward_batch_builder = VideoForwardBatchBuilder()
+        video_forward_batch_builder = VideoForwardBatchBuilder(
+            seed=self.fastvideo_args.preprocess_config.seed)
         self.add_component("video_forward_batch_builder",
                            video_forward_batch_builder)
+
+        # record creator
+        if self.fastvideo_args.workload_type == WorkloadType.I2V:
+            record_creator = i2v_record_creator
+            schema_fields = [f.name for f in pyarrow_schema_i2v]
+        else:
+            record_creator = basic_t2v_record_creator
+            schema_fields = [f.name for f in pyarrow_schema_t2v]
+        processed_dataset_saver = ParquetDatasetSaver(
+            flush_frequency=self.fastvideo_args.preprocess_config.
+            flush_frequency,
+            samples_per_file=self.fastvideo_args.preprocess_config.
+            samples_per_file,
+            schema_fields=schema_fields,
+            record_creator=record_creator,
+        )
+        self.add_component("processed_dataset_saver", processed_dataset_saver)
 
     def prepare_system_environment(self) -> None:
         assert self.fastvideo_args.preprocess_config is not None
