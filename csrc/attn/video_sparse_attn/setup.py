@@ -1,28 +1,28 @@
 import os
 import subprocess
 
-from csrc.attn.config_sta import kernels, sources, target
+from config_vsa import kernels, sources, target
 from setuptools import find_packages, setup
 from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 
 target = target.lower()
 
 # Package metadata
-PACKAGE_NAME = "st_attn"
-VERSION = "0.0.4"
+PACKAGE_NAME = "vsa"
+VERSION = "0.0.2"
 AUTHOR = "Hao AI Lab"
-DESCRIPTION = "Sliding Tile Atteniton Kernel Used in FastVideo"
-URL = "https://github.com/hao-ai-lab/FastVideo/tree/main/csrc/sliding_tile_attention"
+DESCRIPTION = "Video Sparse Attention Kernel Used in FastVideo"
+URL = "https://github.com/hao-ai-lab/FastVideo/tree/main/csrc/attn/video_sparse_attn"
 
 # Set environment variables
-tk_root = os.getenv('THUNDERKITTENS_ROOT', os.path.abspath(os.path.join(os.getcwd(), 'tk/')))
+tk_root = os.getenv('THUNDERKITTENS_ROOT', os.path.abspath(os.path.join(os.getcwd(), '../tk/')))
 python_include = subprocess.check_output(['python', '-c',
                                           "import sysconfig; print(sysconfig.get_path('include'))"]).decode().strip()
 torch_include = subprocess.check_output([
     'python', '-c',
     "import torch; from torch.utils.cpp_extension import include_paths; print(' '.join(['-I' + p for p in include_paths()]))"
 ]).decode().strip()
-print('st_attn root:', tk_root)
+print('vsa root:', tk_root)
 print('Python include:', python_include)
 print('Torch include directories:', torch_include)
 
@@ -41,7 +41,7 @@ if target == 'h100':
 else:
     raise ValueError(f'Target {target} not supported')
 
-source_files = ['st_attn.cpp']
+source_files = ['vsa.cpp']
 for k in kernels:
     if target not in sources[k]['source_files']:
         raise KeyError(f'Target {target} not found in source files for kernel {k}')
@@ -51,21 +51,26 @@ for k in kernels:
         source_files.append(sources[k]['source_files'][target])
     cpp_flags.append(f'-DTK_COMPILE_{k.replace(" ", "_").upper()}')
 
+
+ext_modules = [
+    CUDAExtension('vsa_cuda',
+        sources=source_files,
+        extra_compile_args={
+            'cxx': cpp_flags,
+            'nvcc': cuda_flags
+        },
+        libraries=['cuda'])
+]
+
+
+
 setup(name=PACKAGE_NAME,
       version=VERSION,
       author=AUTHOR,
       description=DESCRIPTION,
       url=URL,
       packages=find_packages(),
-      ext_modules=[
-          CUDAExtension('st_attn_cuda',
-                        sources=source_files,
-                        extra_compile_args={
-                            'cxx': cpp_flags,
-                            'nvcc': cuda_flags
-                        },
-                        libraries=['cuda'])
-      ],
+      ext_modules=ext_modules,
       cmdclass={'build_ext': BuildExtension},
       classifiers=[
           "Programming Language :: Python :: 3",
