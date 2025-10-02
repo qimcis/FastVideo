@@ -442,7 +442,8 @@ class TransformerLoader(ComponentLoader):
                             not hasattr(fastvideo_args, '_loading_teacher_critic_model'))
 
         if use_custom_weights:
-            logger.info("Using custom initialization weights from: %s", custom_weights_path)
+            if 'transformer_2' in model_path:
+                custom_weights_path = getattr(fastvideo_args, 'init_weights_from_safetensors_2', None)
             assert custom_weights_path is not None, "Custom initialization weights must be provided"
             if os.path.isdir(custom_weights_path):
                 safetensors_list = glob.glob(
@@ -479,7 +480,9 @@ class TransformerLoader(ComponentLoader):
             param_dtype=torch.bfloat16,
             reduce_dtype=torch.float32,
             output_dtype=None,
-            training_mode=fastvideo_args.training_mode)
+            training_mode=fastvideo_args.training_mode,
+            enable_torch_compile=fastvideo_args.enable_torch_compile,
+            torch_compile_kwargs=fastvideo_args.torch_compile_kwargs)
 
 
         total_params = sum(p.numel() for p in model.parameters())
