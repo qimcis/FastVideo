@@ -1,0 +1,1219 @@
+vsa root: /workspace/FastVideo/csrc/attn/video_sparse_attn/tk
+Python include: /venv/main/include/python3.10
+Torch include directories: -I/venv/main/lib/python3.10/site-packages/torch/include -I/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include
+/venv/main/lib/python3.10/site-packages/setuptools/dist.py:759: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+!!
+
+        ********************************************************************************
+        Please consider removing the following classifiers in favor of a SPDX license expression:
+
+        License :: OSI Approved :: Apache Software License
+
+        See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+        ********************************************************************************
+
+!!
+  self._finalize_license_expression()
+running install
+/venv/main/lib/python3.10/site-packages/setuptools/_distutils/cmd.py:90: SetuptoolsDeprecationWarning: setup.py install is deprecated.
+!!
+
+        ********************************************************************************
+        Please avoid running ``setup.py`` directly.
+        Instead, use pypa/build, pypa/installer or other
+        standards-based tools.
+
+        By 2025-Oct-31, you need to update your project and remove deprecated calls
+        or your builds will no longer be supported.
+
+        See https://blog.ganssle.io/articles/2021/10/setup-py-deprecated.html for details.
+        ********************************************************************************
+
+!!
+  self.initialize_options()
+running build
+running build_py
+copying vsa/__init__.py -> build/lib.linux-x86_64-cpython-310/vsa
+copying vsa/block_sparse_attn_triton.py -> build/lib.linux-x86_64-cpython-310/vsa
+copying vsa/block_sparse_wrapper.py -> build/lib.linux-x86_64-cpython-310/vsa
+copying vsa/index.py -> build/lib.linux-x86_64-cpython-310/vsa
+running build_ext
+/venv/main/lib/python3.10/site-packages/torch/utils/cpp_extension.py:490: UserWarning: There are no g++ version bounds defined for CUDA version 12.6
+  warnings.warn(f'There are no {compiler_name} version bounds defined for CUDA version {cuda_str_version}')
+building 'vsa_cuda' extension
+creating /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310
+creating /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa
+Emitting ninja build file /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/build.ninja...
+Compiling objects...
+Allowing ninja to set a default number of workers... (overridable by setting the environment variable MAX_JOBS=N)
+[1/2] c++ -MMD -MF /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa.o.d -pthread -B /venv/main/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /venv/main/include -fPIC -O2 -isystem /venv/main/include -fPIC -I/venv/main/lib/python3.10/site-packages/torch/include -I/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda-12.6/include -I/venv/main/include/python3.10 -c -c /workspace/FastVideo/csrc/attn/video_sparse_attn/vsa.cpp -o /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa.o -std=c++20 -O3 -DTK_COMPILE_BLOCK_SPARSE -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1016"' -DTORCH_EXTENSION_NAME=vsa_cuda -D_GLIBCXX_USE_CXX11_ABI=1
+[2/2] /usr/local/cuda-12.6/bin/nvcc --generate-dependencies-with-compile --dependency-output /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa/block_sparse_h100.o.d -I/venv/main/lib/python3.10/site-packages/torch/include -I/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -I/usr/local/cuda-12.6/include -I/venv/main/include/python3.10 -c -c /workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu -o /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa/block_sparse_h100.o -D__CUDA_NO_HALF_OPERATORS__ -D__CUDA_NO_HALF_CONVERSIONS__ -D__CUDA_NO_BFLOAT16_CONVERSIONS__ -D__CUDA_NO_HALF2_OPERATORS__ --expt-relaxed-constexpr --compiler-options ''"'"'-fPIC'"'"'' -DNDEBUG -Xcompiler=-Wno-psabi -Xcompiler=-fno-strict-aliasing --expt-extended-lambda --expt-relaxed-constexpr -forward-unknown-to-host-compiler --use_fast_math -std=c++20 -O3 -Xnvlink=--verbose -Xptxas=--verbose -Xptxas=--warn-on-spills -I/workspace/FastVideo/csrc/attn/video_sparse_attn/tk/include -I/workspace/FastVideo/csrc/attn/video_sparse_attn/tk/prototype -I/venv/main/include/python3.10 -DTORCH_COMPILE -I/venv/main/lib/python3.10/site-packages/torch/include -I/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include -DKITTENS_HOPPER -arch=sm_90a -DTORCH_API_INCLUDE_EXTENSION_H '-DPYBIND11_COMPILER_TYPE="_gcc"' '-DPYBIND11_STDLIB="_libstdcpp"' '-DPYBIND11_BUILD_ABI="_cxxabi1016"' -DTORCH_EXTENSION_NAME=vsa_cuda -D_GLIBCXX_USE_CXX11_ABI=1
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/nn/modules/container/any_module_holder.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+            module->_forward_populate_default_args(std::move(arguments)));
+            ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+    module.attr(name) = wrapper_class;
+    ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(154): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(158): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(detail::py_object_to_dtype(object), non_blocking);
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(169): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_dtype(dtype), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(171): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_device(device), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(173): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(
+                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(728): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor o = torch::empty({static_cast<const uint>(batch),
+                                                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(729): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(730): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(731): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(head_dim)}, v.options());
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(733): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor l_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(734): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(735): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(736): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)},
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(930): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor qg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(931): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(qo_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(932): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(933): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(934): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor kg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(935): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(936): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(937): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(938): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor vg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(939): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(940): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(941): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(943): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor d_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(944): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(945): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(946): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)}, l_vec.options());
+                                                      ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/nn/modules/container/any_module_holder.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+            module->_forward_populate_default_args(std::move(arguments)));
+            ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+    module.attr(name) = wrapper_class;
+    ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(154): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(158): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(detail::py_object_to_dtype(object), non_blocking);
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(169): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_dtype(dtype), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(171): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_device(device), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(173): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(
+                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(728): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor o = torch::empty({static_cast<const uint>(batch),
+                                                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(729): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(730): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(731): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(head_dim)}, v.options());
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(733): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor l_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(734): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(735): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(736): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)},
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(930): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor qg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(931): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(qo_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(932): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(933): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(934): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor kg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(935): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(936): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(937): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(938): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor vg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(939): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(940): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(941): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(943): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor d_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(944): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(945): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(946): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)}, l_vec.options());
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(98): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(102): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(139): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(176): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                       ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                                   ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(98): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(102): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(139): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(176): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                       ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                                   ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                                   ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(444): warning #177-D: variable "warpgroupid" was declared but never referenced
+      const int warpgroupid = warpid/kittens::WARPGROUP_WARPS;
+                ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(494): warning #177-D: variable "row_reg" was declared but never referenced
+      row_vec<rt_fl<16, 64>> row_reg;
+                             ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                               ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                          ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                      ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                                   ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                               ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                          ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                      ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/nn/modules/container/any_module_holder.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+            module->_forward_populate_default_args(std::move(arguments)));
+            ^
+
+Remark: The warnings can be suppressed with "-diag-suppress <warning-number>"
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(92): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+    module.attr(name) = wrapper_class;
+    ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(154): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(158): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                module.to(detail::py_object_to_dtype(object), non_blocking);
+                ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(169): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_dtype(dtype), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(171): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(detail::py_object_to_device(device), non_blocking);
+                  ^
+
+/venv/main/lib/python3.10/site-packages/torch/include/torch/csrc/api/include/torch/python.h(173): warning #3189-D: "module" is parsed as an identifier rather than a keyword because the tokens that follow it do not match those of a preprocessor directive
+                  module.to(
+                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(728): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor o = torch::empty({static_cast<const uint>(batch),
+                                                  ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(729): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(730): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(731): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(head_dim)}, v.options());
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(733): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor l_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(734): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(735): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(736): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)},
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(930): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor qg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(931): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(qo_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(932): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(933): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(934): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor kg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(935): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(936): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(937): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(938): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor vg = torch::zeros({static_cast<const uint>(batch),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(939): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(kv_heads),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(940): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(seq_len),
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(941): warning #191-D: type qualifier is meaningless on cast type
+                                       static_cast<const uint>(head_dim)}, l_vec.options());
+                                                   ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(943): warning #191-D: type qualifier is meaningless on cast type
+      torch::Tensor d_vec = torch::empty({static_cast<const uint>(batch),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(944): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(qo_heads),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(945): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(seq_len),
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(946): warning #191-D: type qualifier is meaningless on cast type
+                                          static_cast<const uint>(1)}, l_vec.options());
+                                                      ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(98): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(102): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(139): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(176): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                       ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                                   ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=64]" at line 790
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(92): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(98): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(102): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(139): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<k_tile> k_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(176): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<v_tile> v_tile_idx = {blockIdx.z, kv_head_idx, kv_block_index, 0};
+                                          ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                      ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(234): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<o_tile> o_tile_idx = {blockIdx.z, blockIdx.y, seq_idx, 0};
+                                                  ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                       ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(249): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_col_vec> tile_idx = {blockIdx.z, blockIdx.y, 0, seq_idx};
+                                                   ^
+          detected during instantiation of "void fwd_attend_ker(fwd_globals<D>) [with D=128]" at line 841
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                                   ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=64]" at line 994
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(444): warning #177-D: variable "warpgroupid" was declared but never referenced
+      const int warpgroupid = warpid/kittens::WARPGROUP_WARPS;
+                ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(494): warning #177-D: variable "row_reg" was declared but never referenced
+      row_vec<rt_fl<16, 64>> row_reg;
+                             ^
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                               ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                          ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                      ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=64]" at line 1059
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(304): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<o_tile> tile_idx = {blockIdx.z, blockIdx.y, (blockIdx.x * PREP_NUM_WARPS) + w, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                        ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                    ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(320): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<d_tile> tile_idx = {blockIdx.z, blockIdx.y, 0, (blockIdx.x * PREP_NUM_WARPS) + w};
+                                                                   ^
+          detected during instantiation of "void bwd_attend_prep_ker(bwd_prep_globals<D>) [with D=128]" at line 1098
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(472): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<k_tile> tile_idx_kv = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                                ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(477): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<q_tile> tile_idx_qo = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(478): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                               ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                       ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(537): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<l_tile> vec_idx = {blockIdx.z, blockIdx.y, 0, load_q_block_index};
+                                                   ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                        ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(551): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                    ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                          ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(562): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<q_tile> q_tile_idx = {blockIdx.z, blockIdx.y, load_q_block_index, 0};
+                                                      ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(578): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                         ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(634): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+              coord<qg_tile> tile_idx = {blockIdx.z, blockIdx.y, store_qg_block_index, 0};
+                                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(649): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<kg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                     ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+/workspace/FastVideo/csrc/attn/video_sparse_attn/vsa/block_sparse_h100.cu(657): warning #2361-D: invalid narrowing conversion from "unsigned int" to "int"
+          coord<vg_tile> tile_idx = {blockIdx.z, kv_head_idx, blockIdx.x, 0};
+                                                              ^
+          detected during instantiation of "void bwd_attend_ker(bwd_globals<D>) [with D=128]" at line 1163
+
+ptxas info    : (C7517) warpgroup.wait is injected in around line 14945 by compiler to allow use of registers defined by GMMA in function '_Z14bwd_attend_kerILi128EEv11bwd_globalsIXT_EE'
+ptxas info    : (C7517) warpgroup.wait is injected in around line 17371 by compiler to allow use of registers defined by GMMA in function '_Z14bwd_attend_kerILi128EEv11bwd_globalsIXT_EE'
+ptxas info    : (C7517) warpgroup.wait is injected in around line 7071 by compiler to allow use of registers defined by GMMA in function '_Z14bwd_attend_kerILi64EEv11bwd_globalsIXT_EE'
+ptxas info    : (C7517) warpgroup.wait is injected in around line 8906 by compiler to allow use of registers defined by GMMA in function '_Z14bwd_attend_kerILi64EEv11bwd_globalsIXT_EE'
+ptxas warning : Registers are spilled to local memory in function '_Z14bwd_attend_kerILi64EEv11bwd_globalsIXT_EE', 28 bytes spill stores, 32 bytes spill loads
+ptxas info    : 10 bytes gmem
+ptxas info    : Compiling entry function '_Z14bwd_attend_kerILi128EEv11bwd_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z14bwd_attend_kerILi128EEv11bwd_globalsIXT_EE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 252 registers, used 1 barriers, 32 bytes smem
+ptxas info    : Compiling entry function '_Z19bwd_attend_prep_kerILi128EEv16bwd_prep_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z19bwd_attend_prep_kerILi128EEv16bwd_prep_globalsIXT_EE
+    32 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 252 registers, used 1 barriers, 32 bytes cumulative stack size, 16 bytes smem
+ptxas info    : Compiling entry function '_Z14bwd_attend_kerILi64EEv11bwd_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z14bwd_attend_kerILi64EEv11bwd_globalsIXT_EE
+    32 bytes stack frame, 28 bytes spill stores, 32 bytes spill loads
+ptxas info    : Used 168 registers, used 1 barriers, 32 bytes cumulative stack size, 32 bytes smem
+ptxas info    : Compiling entry function '_Z19bwd_attend_prep_kerILi64EEv16bwd_prep_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z19bwd_attend_prep_kerILi64EEv16bwd_prep_globalsIXT_EE
+    32 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 247 registers, used 1 barriers, 32 bytes cumulative stack size, 16 bytes smem
+ptxas info    : Compiling entry function '_Z14fwd_attend_kerILi128EEv11fwd_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z14fwd_attend_kerILi128EEv11fwd_globalsIXT_EE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 128 registers, used 1 barriers, 32 bytes smem
+ptxas info    : Compiling entry function '_Z14fwd_attend_kerILi64EEv11fwd_globalsIXT_EE' for 'sm_90a'
+ptxas info    : Function properties for _Z14fwd_attend_kerILi64EEv11fwd_globalsIXT_EE
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 107 registers, used 1 barriers, 32 bytes smem
+g++ -pthread -B /venv/main/compiler_compat -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -fPIC -O2 -isystem /venv/main/include -fPIC -O2 -isystem /venv/main/include -shared /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa.o /workspace/FastVideo/csrc/attn/video_sparse_attn/build/temp.linux-x86_64-cpython-310/vsa/block_sparse_h100.o -L/venv/main/lib/python3.10/site-packages/torch/lib -L/usr/local/cuda-12.6/lib64 -lcuda -lc10 -ltorch -ltorch_cpu -ltorch_python -lcudart -lc10_cuda -ltorch_cuda -o build/lib.linux-x86_64-cpython-310/vsa_cuda.cpython-310-x86_64-linux-gnu.so
+running install_lib
+creating /venv/main/lib/python3.10/site-packages/vsa
+copying build/lib.linux-x86_64-cpython-310/vsa/__init__.py -> /venv/main/lib/python3.10/site-packages/vsa
+copying build/lib.linux-x86_64-cpython-310/vsa/block_sparse_attn_triton.py -> /venv/main/lib/python3.10/site-packages/vsa
+copying build/lib.linux-x86_64-cpython-310/vsa/block_sparse_wrapper.py -> /venv/main/lib/python3.10/site-packages/vsa
+copying build/lib.linux-x86_64-cpython-310/vsa/index.py -> /venv/main/lib/python3.10/site-packages/vsa
+copying build/lib.linux-x86_64-cpython-310/vsa_cuda.cpython-310-x86_64-linux-gnu.so -> /venv/main/lib/python3.10/site-packages
+byte-compiling /venv/main/lib/python3.10/site-packages/vsa/__init__.py to __init__.cpython-310.pyc
+byte-compiling /venv/main/lib/python3.10/site-packages/vsa/block_sparse_attn_triton.py to block_sparse_attn_triton.cpython-310.pyc
+byte-compiling /venv/main/lib/python3.10/site-packages/vsa/block_sparse_wrapper.py to block_sparse_wrapper.cpython-310.pyc
+byte-compiling /venv/main/lib/python3.10/site-packages/vsa/index.py to index.cpython-310.pyc
+running install_egg_info
+running egg_info
+creating vsa.egg-info
+writing vsa.egg-info/PKG-INFO
+writing dependency_links to vsa.egg-info/dependency_links.txt
+writing requirements to vsa.egg-info/requires.txt
+writing top-level names to vsa.egg-info/top_level.txt
+writing manifest file 'vsa.egg-info/SOURCES.txt'
+reading manifest file 'vsa.egg-info/SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+writing manifest file 'vsa.egg-info/SOURCES.txt'
+Copying vsa.egg-info to /venv/main/lib/python3.10/site-packages/vsa-0.0.3-py3.10.egg-info
+running install_scripts
