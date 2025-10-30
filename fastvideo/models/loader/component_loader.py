@@ -428,6 +428,7 @@ class TransformerLoader(ComponentLoader):
 
     def load(self, model_path: str, fastvideo_args: FastVideoArgs):
         """Load the transformer based on the model path, and inference args."""
+        module_alias = getattr(self, "module_name", "transformer")
         config = get_diffusers_config(model=model_path)
         hf_config = deepcopy(config)
         cls_name = config.pop("_class_name")
@@ -436,15 +437,19 @@ class TransformerLoader(ComponentLoader):
                 "Model config does not contain a _class_name attribute. "
                 "Only diffusers format is supported.")
 
-        logger.info("transformer cls_name: %s", cls_name)
+        logger.info("Loading %s with transformer cls_name: %s", module_alias,
+                    cls_name)
         if fastvideo_args.override_transformer_cls_name is not None:
             cls_name = fastvideo_args.override_transformer_cls_name
             logger.info("Overriding transformer cls_name to %s", cls_name)
 
-        fastvideo_args.model_paths["transformer"] = model_path
+        fastvideo_args.model_paths[module_alias] = model_path
+        fastvideo_args.model_loaded.setdefault(module_alias, True)
 
         # Config from Diffusers supersedes fastvideo's model config
         dit_config = fastvideo_args.pipeline_config.dit_config
+        if module_alias != "transformer":
+            dit_config = deepcopy(dit_config)
         dit_config.update_model_arch(config)
 
         model_cls, _ = ModelRegistry.resolve_model_cls(cls_name)
@@ -456,14 +461,15 @@ class TransformerLoader(ComponentLoader):
             raise ValueError(f"No safetensors files found in {model_path}")
 
         # Check if we should use custom initialization weights
-        custom_weights_path = getattr(fastvideo_args, 'init_weights_from_safetensors', None)
-        use_custom_weights = (custom_weights_path and os.path.exists(custom_weights_path) and 
-                            not hasattr(fastvideo_args, '_loading_teacher_critic_model'))
+        custom_weights_attr = ('init_weights_from_safetensors_2'
+                               if module_alias == 'transformer_2' else
+                               'init_weights_from_safetensors')
+        custom_weights_path = getattr(fastvideo_args, custom_weights_attr, None)
+        use_custom_weights = (
+            custom_weights_path and os.path.exists(custom_weights_path)
+            and not hasattr(fastvideo_args, '_loading_teacher_critic_model'))
 
         if use_custom_weights:
-            if 'transformer_2' in model_path:
-                custom_weights_path = getattr(fastvideo_args, 'init_weights_from_safetensors_2', None)
-            assert custom_weights_path is not None, "Custom initialization weights must be provided"
             if os.path.isdir(custom_weights_path):
                 safetensors_list = glob.glob(
                     os.path.join(str(custom_weights_path), "*.safetensors"))
@@ -602,6 +608,7 @@ class PipelineComponentLoader:
         # Get the appropriate loader for this module type
         loader = ComponentLoader.for_module_type(module_name,
                                                  transformers_or_diffusers)
+        setattr(loader, "module_name", module_name)
 
         # Load the module
         return loader.load(component_model_path, fastvideo_args)

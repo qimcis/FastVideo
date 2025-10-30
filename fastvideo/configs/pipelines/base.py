@@ -89,6 +89,13 @@ class PipelineConfig:
     ti2v_task: bool = False
     boundary_ratio: float | None = None
 
+    # Sketch-Rendering (SR) configuration
+    sr_enabled: bool = False
+    sr_diff_threshold: float = 0.01
+    sr_min_switch_step: int = 5
+    sr_max_switch_step: int = 30
+    sr_offload_unused: bool = True
+
     # Compilation
     # enable_torch_compile: bool = False
 
@@ -214,6 +221,41 @@ class PipelineConfig:
             help=
             "Comma-separated list of denoising steps (e.g., '1000,757,522')",
         )
+        parser.add_argument(
+            f"--{prefix_with_dot}sr-enabled",
+            action=StoreBoolean,
+            dest=f"{prefix_with_dot.replace('-', '_')}sr_enabled",
+            default=PipelineConfig.sr_enabled,
+            help="Enable Sketch-Rendering mode for dual-model switching",
+        )
+        parser.add_argument(
+            f"--{prefix_with_dot}sr-diff-threshold",
+            type=float,
+            dest=f"{prefix_with_dot.replace('-', '_')}sr_diff_threshold",
+            default=PipelineConfig.sr_diff_threshold,
+            help="Self-diff threshold for SR switching",
+        )
+        parser.add_argument(
+            f"--{prefix_with_dot}sr-min-switch-step",
+            type=int,
+            dest=f"{prefix_with_dot.replace('-', '_')}sr_min_switch_step",
+            default=PipelineConfig.sr_min_switch_step,
+            help="Minimum step index before SR can switch to rendering model",
+        )
+        parser.add_argument(
+            f"--{prefix_with_dot}sr-max-switch-step",
+            type=int,
+            dest=f"{prefix_with_dot.replace('-', '_')}sr_max_switch_step",
+            default=PipelineConfig.sr_max_switch_step,
+            help="Maximum step index to force SR switch to rendering model",
+        )
+        parser.add_argument(
+            f"--{prefix_with_dot}sr-offload-unused",
+            action=StoreBoolean,
+            dest=f"{prefix_with_dot.replace('-', '_')}sr_offload_unused",
+            default=PipelineConfig.sr_offload_unused,
+            help="Offload inactive SR model to CPU during switching",
+        )
 
         # Add VAE configuration arguments
         from fastvideo.configs.models.vaes.base import VAEConfig
@@ -319,6 +361,22 @@ class PipelineConfig:
             raise ValueError(
                 f"Length of text postprocess functions ({len(self.postprocess_text_funcs)}) must be equal to length of text preprocessing functions ({len(self.preprocess_text_funcs)})"
             )
+
+        self.validate_sr_config()
+
+    def validate_sr_config(self) -> None:
+        """Validate SR configuration."""
+        if self.sr_enabled and self.boundary_ratio is not None:
+            raise ValueError(
+                "Cannot use both sr_enabled and boundary_ratio. SR mode and Wan2.2 mode are mutually exclusive."
+            )
+
+        if self.sr_enabled:
+            if not (0 < self.sr_diff_threshold < 1):
+                raise ValueError("sr_diff_threshold must be in (0, 1)")
+            if self.sr_min_switch_step >= self.sr_max_switch_step:
+                raise ValueError(
+                    "sr_min_switch_step must be < sr_max_switch_step")
 
     def dump_to_json(self, file_path: str):
         output_dict = shallow_asdict(self)

@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/workspace/FastVideo/examples/test_sr_multi_gpu.py", line 3, in <module>
+    from fastvideo import VideoGenerator
+ModuleNotFoundError: No module named 'fastvideo'

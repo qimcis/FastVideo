@@ -84,6 +84,7 @@ class WorkloadType(str, Enum):
 class FastVideoArgs:
     # Model and path configuration (for convenience)
     model_path: str
+    rendering_model_path: str | None = None
 
     # Running mode
     mode: ExecutionMode = ExecutionMode.INFERENCE
@@ -196,6 +197,7 @@ class FastVideoArgs:
                              self.moba_config_path, e)
                 raise
         self.check_fastvideo_args()
+        self.model_loaded.setdefault("transformer_2", True)
 
     @staticmethod
     def add_cli_args(parser: FlexibleArgumentParser) -> FlexibleArgumentParser:
@@ -210,6 +212,12 @@ class FastVideoArgs:
             "--model-dir",
             type=str,
             help="Directory containing StepVideo model",
+        )
+        parser.add_argument(
+            "--rendering-model-path",
+            type=str,
+            default=FastVideoArgs.rendering_model_path,
+            help="Optional secondary model path used for Sketch-Rendering mode.",
         )
 
         # Running mode
@@ -558,6 +566,13 @@ class FastVideoArgs:
             self.tp_size = 1
         if self.sp_size == -1:
             self.sp_size = self.num_gpus
+
+        if self.pipeline_config.sr_enabled:
+            if not self.rendering_model_path or self.rendering_model_path.strip(
+            ) == "":
+                raise ValueError(
+                    "Sketch-Rendering mode requires a non-empty rendering_model_path."
+                )
         if self.hsdp_shard_dim == -1:
             self.hsdp_shard_dim = self.num_gpus
 

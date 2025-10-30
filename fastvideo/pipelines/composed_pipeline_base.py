@@ -158,6 +158,7 @@ class ComposedPipelineBase(ABC):
                         required_config_modules: list[str] | None = None,
                         loaded_modules: dict[str, torch.nn.Module]
                         | None = None,
+                        rendering_model_path: str | None = None,
                         **kwargs) -> "ComposedPipelineBase":
         """
         Load a pipeline from a pretrained model.
@@ -167,6 +168,9 @@ class ComposedPipelineBase(ABC):
         if args is None or args.inference_mode:
 
             kwargs['model_path'] = model_path
+            if rendering_model_path is not None:
+                kwargs.setdefault("rendering_model_path",
+                                  rendering_model_path)
             fastvideo_args = FastVideoArgs.from_kwargs(**kwargs)
         else:
             assert args is not None, "args must be provided for training mode"
@@ -175,6 +179,8 @@ class ComposedPipelineBase(ABC):
             fastvideo_args.model_path = model_path
             for key, value in kwargs.items():
                 setattr(fastvideo_args, key, value)
+            if rendering_model_path is not None:
+                fastvideo_args.rendering_model_path = rendering_model_path
 
             fastvideo_args.dit_cpu_offload = False
             # we hijack the precision to be the master weight type so that the
@@ -266,6 +272,13 @@ class ComposedPipelineBase(ABC):
         model_index = self._load_config(self.model_path)
         logger.info("Loading pipeline modules from config: %s", model_index)
 
+        sr_enabled = fastvideo_args.pipeline_config.sr_enabled
+        rendering_model_path = getattr(fastvideo_args, "rendering_model_path",
+                                       None)
+        if isinstance(rendering_model_path, str):
+            rendering_model_path = rendering_model_path.strip() or None
+            fastvideo_args.rendering_model_path = rendering_model_path
+
         # remove keys that are not pipeline modules
         model_index.pop("_class_name")
         model_index.pop("_diffusers_version")
@@ -279,6 +292,12 @@ class ComposedPipelineBase(ABC):
                         model_index["boundary_ratio"])
             fastvideo_args.pipeline_config.dit_config.boundary_ratio = model_index[
                 "boundary_ratio"]
+        elif sr_enabled and rendering_model_path:
+            if "transformer_2" not in self.required_config_modules:
+                logger.info(
+                    "SR mode enabled. Adding transformer_2 to required modules."
+                )
+                self.required_config_modules.append("transformer_2")
 
         model_index.pop("boundary_ratio", None)
         # used by Wan2.2 ti2v
@@ -349,6 +368,30 @@ class ComposedPipelineBase(ABC):
             modules[module_name] = module
 
         # Check if all required modules were loaded
+        if sr_enabled:
+            if rendering_model_path is None:
+                logger.warning(
+                    "SR mode enabled but rendering_model_path is not provided; secondary transformer will not be loaded."
+                )
+            elif "transformer_2" not in modules:
+                logger.info(
+                    "Loading SR rendering transformer from %s",
+                    rendering_model_path)
+                rendering_component_path = os.path.join(rendering_model_path,
+                                                        "transformer")
+                if not os.path.isdir(rendering_component_path):
+                    raise FileNotFoundError(
+                        f"Rendering transformer path not found: {rendering_component_path}"
+                    )
+                modules["transformer_2"] = PipelineComponentLoader.load_module(
+                    "transformer_2",
+                    rendering_component_path,
+                    "diffusers",
+                    fastvideo_args,
+                )
+                fastvideo_args.model_paths[
+                    "transformer_2"] = rendering_component_path
+
         for module_name in required_modules:
             if module_name not in modules or modules[module_name] is None:
                 raise ValueError(

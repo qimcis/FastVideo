@@ -102,6 +102,23 @@ python example.py
 
 For a more detailed guide, please see our [inference quick start](https://hao-ai-lab.github.io/FastVideo/inference/inference_quick_start.html).
 
+### Sketch-Rendering (SR) Mode
+SR mode accelerates inference by pairing a large sketch model with a lightweight rendering model. The pipeline dynamically switches models based on generation convergence, delivering ~3x speedups with minimal quality drop.
+
+```python
+from fastvideo import VideoGenerator
+
+generator = VideoGenerator.from_pretrained_sr(
+    sketch_model_path="FastWan2.1-14B-Diffusers",
+    rendering_model_path="FastWan2.1-1.3B-Diffusers",
+    num_gpus=2,
+)
+
+video = generator.generate_video("Your prompt here")
+```
+
+See `examples/inference/basic/basic_sr.py` for a full example with recommended settings.
+
 ### Other docs:
 
 - [Design Overview](https://hao-ai-lab.github.io/FastVideo/design/overview.html)

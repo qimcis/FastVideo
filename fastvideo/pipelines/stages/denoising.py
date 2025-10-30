@@ -77,6 +77,13 @@ class DenoisingStage(PipelineStage):
         self.scheduler = scheduler
         self.vae = vae
         self.pipeline = weakref.ref(pipeline) if pipeline else None
+
+        # SR state tracking
+        self.sr_switched: bool = False
+        self.sr_prev_model_output: torch.Tensor | None = None
+        self.sr_prev_prev_model_output: torch.Tensor | None = None
+        self.sr_prev_diff: float = 0.0
+
         attn_head_size = self.transformer.hidden_size // self.transformer.num_attention_heads
         self.attn_backend = get_attn_backend(
             head_size=attn_head_size,
@@ -105,6 +112,9 @@ class DenoisingStage(PipelineStage):
         Returns:
             The batch with denoised latents.
         """
+        # Reset SR state for new batch
+        self._sr_reset_state()
+
         pipeline = self.pipeline() if self.pipeline else None
         if not fastvideo_args.model_loaded["transformer"]:
             loader = TransformerLoader()
@@ -281,6 +291,16 @@ class DenoisingStage(PipelineStage):
                         self.transformer.to('cpu')
                     current_model = self.transformer_2
                     current_guidance_scale = batch.guidance_scale_2
+
+                if (fastvideo_args.pipeline_config.sr_enabled
+                        and self.transformer_2 is not None):
+                    current_model, current_guidance_scale = self._sr_select_model(
+                        i=i,
+                        current_model=current_model,
+                        guidance_scale=current_guidance_scale,
+                        fastvideo_args=fastvideo_args,
+                    )
+
                 assert current_model is not None, "current_model is None"
 
                 # Expand latents for V2V/I2V
@@ -434,6 +454,16 @@ class DenoisingStage(PipelineStage):
                                 guidance_rescale=batch.guidance_rescale,
                             )
                     # Compute the previous noisy sample
+                    if (fastvideo_args.pipeline_config.sr_enabled
+                            and self.transformer_2 is not None):
+                        sr_denoised = self._sr_compute_denoised(
+                            latents=latents,
+                            noise_pred=noise_pred,
+                            timestep=t)
+                        self._sr_record_model_output(
+                            sr_denoised if sr_denoised is not None else
+                            noise_pred)
+
                     latents = self.scheduler.step(noise_pred,
                                                   t,
                                                   latents,
@@ -498,6 +528,127 @@ class DenoisingStage(PipelineStage):
                         torch.mps.current_allocated_memory())
 
         return batch
+
+    def _sr_reset_state(self) -> None:
+        """Reset SR mode tracking state."""
+        self.sr_switched = False
+        self.sr_prev_model_output = None
+        self.sr_prev_prev_model_output = None
+        self.sr_prev_diff = 0.0
+
+    def _sr_select_model(
+        self,
+        i: int,
+        current_model,
+        guidance_scale: float,
+        fastvideo_args: FastVideoArgs,
+    ) -> tuple[Any, float]:
+        """
+        Select model for SR mode based on self-diff metric.
+        """
+        config = fastvideo_args.pipeline_config
+        if self.transformer is None:
+            raise RuntimeError(
+                "Primary transformer is not available during SR selection.")
+        base_model = self.transformer
+
+        if self.sr_switched:
+            return self.transformer_2, guidance_scale
+
+        # Always start with sketch (primary) model
+        if i < config.sr_min_switch_step:
+            return base_model, guidance_scale
+
+        if (self.sr_prev_model_output is not None
+                and self.sr_prev_prev_model_output is not None):
+            prev = self.sr_prev_model_output
+            prev_prev = self.sr_prev_prev_model_output
+
+            diff_tensor = torch.tanh(
+                (prev - prev_prev).abs().mean() /
+                (prev_prev.abs().mean() + 1e-8))
+            diff = float(diff_tensor.item())
+            self_diff = self.sr_prev_diff - diff
+
+            should_switch = (
+                0 < self_diff < config.sr_diff_threshold
+            ) or (i >= config.sr_max_switch_step)
+
+            if should_switch:
+                total_steps = len(getattr(self.scheduler, "timesteps", []))
+                logger.info(
+                    "SR switching to rendering model at step %s/%s "
+                    "(self_diff=%0.6f, threshold=%0.6f)",
+                    i,
+                    total_steps,
+                    self_diff,
+                    config.sr_diff_threshold,
+                )
+
+                if (config.sr_offload_unused and fastvideo_args.dit_cpu_offload
+                        and torch.cuda.is_available() and next(
+                            self.transformer.parameters()).device.type
+                        == 'cuda'):
+                    self.transformer.to('cpu')
+                    torch.cuda.empty_cache()
+
+                self.transformer_2.to(get_local_torch_device())
+                self.sr_switched = True
+                self.sr_prev_diff = diff
+                return self.transformer_2, guidance_scale
+
+            self.sr_prev_diff = diff
+
+        return base_model, guidance_scale
+
+    def _sr_record_model_output(self, model_output: torch.Tensor) -> None:
+        """Record latest model outputs for SR switching heuristics."""
+        if not isinstance(model_output, torch.Tensor):
+            return
+
+        # Maintain last two outputs (detach to avoid graph retention)
+        if self.sr_prev_model_output is not None:
+            self.sr_prev_prev_model_output = self.sr_prev_model_output.detach(
+            ).clone()
+        else:
+            self.sr_prev_prev_model_output = None
+
+        self.sr_prev_model_output = model_output.detach().clone()
+
+    def _sr_compute_denoised(
+        self,
+        latents: torch.Tensor,
+        noise_pred: torch.Tensor,
+        timestep: torch.Tensor | float,
+    ) -> torch.Tensor | None:
+        """Compute x0 (denoised prediction) for SR metric when possible."""
+        scheduler = self.scheduler
+        sigmas = getattr(scheduler, "sigmas", None)
+        timesteps = getattr(scheduler, "timesteps", None)
+        if sigmas is None or timesteps is None:
+            return None
+
+        device = noise_pred.device
+        dtype = noise_pred.dtype
+        sigmas = sigmas.to(device=device, dtype=dtype)
+        timesteps_tensor = timesteps.to(device=device, dtype=dtype)
+
+        if isinstance(timestep, torch.Tensor):
+            if timestep.numel() == 0:
+                return None
+            current_timestep = timestep.reshape(-1)[0].to(device=device,
+                                                          dtype=dtype)
+        else:
+            current_timestep = torch.tensor(float(timestep),
+                                            device=device,
+                                            dtype=dtype)
+
+        sigma_idx = torch.argmin((timesteps_tensor - current_timestep).abs())
+        sigma = sigmas[sigma_idx]
+
+        # Ensure broadcasting matches tensor rank
+        denoised = latents.to(dtype=dtype, device=device) - sigma * noise_pred
+        return denoised
 
     def prepare_extra_func_kwargs(self, func, kwargs) -> dict[str, Any]:
         """

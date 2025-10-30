@@ -77,6 +77,31 @@ class VideoGenerator:
         return cls.from_fastvideo_args(fastvideo_args)
 
     @classmethod
+    def from_pretrained_sr(
+        cls,
+        sketch_model_path: str,
+        rendering_model_path: str,
+        sr_diff_threshold: float = 0.01,
+        sr_min_switch_step: int = 5,
+        sr_max_switch_step: int = 30,
+        **kwargs,
+    ) -> "VideoGenerator":
+        """
+        Create a video generator configured for Sketch-Rendering mode.
+        """
+        kwargs.update({
+            "model_path": sketch_model_path,
+            "rendering_model_path": rendering_model_path,
+            "sr_enabled": True,
+            "sr_diff_threshold": sr_diff_threshold,
+            "sr_min_switch_step": sr_min_switch_step,
+            "sr_max_switch_step": sr_max_switch_step,
+        })
+
+        fastvideo_args = FastVideoArgs.from_kwargs(**kwargs)
+        return cls.from_fastvideo_args(fastvideo_args)
+
+    @classmethod
     def from_fastvideo_args(cls,
                             fastvideo_args: FastVideoArgs) -> "VideoGenerator":
         """
