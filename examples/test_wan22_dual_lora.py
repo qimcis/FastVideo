@@ -106,10 +106,13 @@ def combine_loras(lora_dirs, weights, output_dir):
 
 
 def main():
-    os.environ.setdefault("FASTVIDEO_ATTENTION_BACKEND", "VIDEO_SPARSE_ATTN")
-    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0,1")
+    # FIX FOR VERTICAL VIDEOS: Use Flash Attention instead of Video Sparse Attention
+    # VIDEO_SPARSE_ATTN breaks spatial coherence for portrait orientation (tall videos)
 
-    print("Loading Wan2.2-T2V-A14B with converted Instagirl LoRA")
+    # Using SAGE_ATTN_THREE for ~3x speedup with acceptable quality trade-off
+    # This backend is optimized for Blackwell GPUs (H200) and should work well with vertical videos
+    os.environ.setdefault("FASTVIDEO_ATTENTION_BACKEND", "VIDEO_SPARSE_ATTN")
+    os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0,1") 
 
     config = Wan2_2_T2V_A14B_Config()
 
@@ -123,39 +126,29 @@ def main():
     Path("/workspace/FastVideo/outputs").mkdir(parents=True, exist_ok=True)
 
     prompt = (
-        "Instagirl, casual selfie from slightly above with the iPhone 8 front camera "
-        "(7MP, f/2.2, 1080p/30), walking in Central Park at late-afternoon golden hour; "
-        "head-and-shoulders at arm's length, mild wide-angle feel, natural skin with fine pores, "
-        "faint peach fuzz, tiny freckles and slight uneven tone (no beauty filter), lively eyes, "
-        "subtle off-white teeth with natural enamel translucency, a few hair flyaways, knit sweater "
-        "and simple pendant; trees and a thin skyline band softly blurred behind, gentle sun flare, "
-        "small hand-held sway and a single natural blink, warm but true-to-life color, no oversharpening."
+        "Instagirl, casual selfie from slightly above with the iPhone 8 front camera (7MP, f/2.2, 1080p/30), walking in Central Park at late‑afternoon golden hour; head‑and‑shoulders at arm’s length, mild wide‑angle feel, natural skin with fine pores, faint peach fuzz, tiny freckles and slight uneven tone (no beauty filter), lively eyes, subtle off‑white teeth with natural enamel translucency, a few hair flyaways, knit sweater and simple pendant; trees and a thin skyline band softly blurred behind, gentle sun flare, small hand‑held sway and a single natural blink, warm but true‑to‑life color, no oversharpening."
     )
 
     lora_path = "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-HIGH_converted.safetensors"
     nickname = "instagirl_high"
-    print(f"\nApplying single LoRA {nickname} from {lora_path}")
-    generator.set_lora_adapter(lora_nickname=nickname, lora_path=lora_path)
+    lora_scale = 1.1  # defaults to 1.0
+    print(f"\nApplying single LoRA {nickname} from {lora_path} with scale {lora_scale}")
+    generator.set_lora_adapter(lora_nickname=nickname, lora_path=lora_path, lora_scale=lora_scale)
 
     negative_prompt = (
-        "Bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, "
-        "images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, "
-        "incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, "
-        "misshapen limbs, fused fingers, still picture, messy background, three legs, many people "
-        "in the background, walking backwards"
+        "censored, sunburnt skin, rashy skin, red cheeks"
     )
 
-    output_path = "/workspace/FastVideo/outputs/test_wan225b_instagirl_high.mp4"
-    print(f"Generating 5 second video -> {output_path}")
+    output_path = "/workspace/FastVideo/outputs/test_wan22_quality_fixed.mp4"
     generator.generate_video(
         prompt=prompt,
         negative_prompt=negative_prompt,
-        height=720,
-        width=1280,
+        height=1280,
+        width=960,
         num_frames=150,
-        num_inference_steps=8,
+        num_inference_steps=12,
         fps=30,
-        guidance_scale=2.5,
+        guidance_scale=1.0,
         save_video=True,
         output_path=output_path,
     )

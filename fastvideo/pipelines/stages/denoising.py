@@ -258,6 +258,15 @@ class DenoisingStage(PipelineStage):
         trajectory_timesteps: list[torch.Tensor] = []
         trajectory_latents: list[torch.Tensor] = []
 
+        # Debug logging for dual LoRA
+        logger.info("="*80)
+        logger.info("DENOISING LOOP DEBUG INFO")
+        logger.info("="*80)
+        logger.info("boundary_timestep: %s", boundary_timestep)
+        logger.info("num_inference_steps: %d", num_inference_steps)
+        logger.info("Has transformer_2: %s", self.transformer_2 is not None)
+        logger.info("="*80)
+
         # Run denoising loop
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -273,6 +282,7 @@ class DenoisingStage(PipelineStage):
                         self.transformer_2.to('cpu')
                     current_model = self.transformer
                     current_guidance_scale = batch.guidance_scale
+                    model_name = "transformer (HIGH noise expert)"
                 else:
                     # low-noise stage in wan2.2
                     if fastvideo_args.dit_cpu_offload and next(
@@ -281,7 +291,13 @@ class DenoisingStage(PipelineStage):
                         self.transformer.to('cpu')
                     current_model = self.transformer_2
                     current_guidance_scale = batch.guidance_scale_2
+                    model_name = "transformer_2 (LOW noise expert)"
                 assert current_model is not None, "current_model is None"
+
+                # Debug logging: track which model is used at each step
+                logger.info("Step %d/%d | timestep=%.4f | using %s | guidance_scale=%.2f",
+                           i + 1, num_inference_steps, t.item() if torch.is_tensor(t) else t,
+                           model_name, current_guidance_scale)
 
                 # Expand latents for V2V/I2V
                 latent_model_input = latents.to(target_dtype)

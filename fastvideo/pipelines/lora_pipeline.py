@@ -110,10 +110,14 @@ class LoRAPipeline(ComposedPipelineBase):
     def convert_to_lora_layers(self) -> None:
         """
         Unified method to convert the transformer to a LoRA transformer.
+        Also converts transformer_2 if present (for MoE models like Wan2.2).
+        Separate LoRAs can be applied to each transformer.
         """
         if self.lora_initialized:
             return
         self.lora_initialized = True
+
+        # Convert transformer (high noise expert)
         converted_count = 0
         for name, layer in self.modules["transformer"].named_modules():
             if not self.is_target_layer(name):
@@ -135,7 +139,33 @@ class LoRAPipeline(ComposedPipelineBase):
                 self.lora_layers[name] = layer
                 replace_submodule(self.modules["transformer"], name, layer)
                 converted_count += 1
-        logger.info("Converted %d layers to LoRA layers", converted_count)
+        logger.info("Converted %d layers to LoRA layers in transformer", converted_count)
+
+        # Convert transformer_2 (low noise expert) if it exists
+        if "transformer_2" in self.modules and self.modules["transformer_2"] is not None:
+            converted_count_2 = 0
+            for name, layer in self.modules["transformer_2"].named_modules():
+                if not self.is_target_layer(name):
+                    continue
+
+                excluded = False
+                for exclude_layer in self.exclude_lora_layers:
+                    if exclude_layer in name:
+                        excluded = True
+                        break
+                if excluded:
+                    continue
+
+                layer = get_lora_layer(layer,
+                                       lora_rank=self.lora_rank,
+                                       lora_alpha=self.lora_alpha,
+                                       training_mode=self.training_mode)
+                if layer is not None:
+                    # Use "transformer_2" prefix to distinguish from transformer
+                    self.lora_layers[f"transformer_2.{name}"] = layer
+                    replace_submodule(self.modules["transformer_2"], name, layer)
+                    converted_count_2 += 1
+            logger.info("Converted %d layers to LoRA layers in transformer_2", converted_count_2)
 
         if "fake_score_transformer" in self.modules:
             for name, layer in self.modules[
@@ -157,12 +187,15 @@ class LoRAPipeline(ComposedPipelineBase):
 
     def set_lora_adapter(self,
                          lora_nickname: str,
-                         lora_path: str | None = None):  # type: ignore
+                         lora_path: str | None = None,
+                         lora_scale: float = 1.0):  # type: ignore
         """
         Load a LoRA adapter into the pipeline and merge it into the transformer.
         Args:
             lora_nickname: The "nick name" of the adapter when referenced in the pipeline.
             lora_path: The path to the adapter, either a local path or a Hugging Face repo id.
+            lora_scale: Strength/scale of the LoRA adapter (0.0 to 2.0, default 1.0).
+                       Lower values reduce LoRA influence, higher values increase it.
         """
 
         if lora_nickname not in self.lora_adapters and lora_path is None:
@@ -250,10 +283,15 @@ class LoRAPipeline(ComposedPipelineBase):
         # Merge the new adapter
         adapted_count = 0
         for idx, (name, layer) in enumerate(self.lora_layers.items()):
-            lora_A_name = name + ".lora_A"
-            lora_B_name = name + ".lora_B"
+            # For MoE models: transformer_2 layers should use the same LoRA weights
+            # Strip transformer_2 prefix to find matching weights
+            lookup_name = name.replace("transformer_2.", "")
+
+            lora_A_name = lookup_name + ".lora_A"
+            lora_B_name = lookup_name + ".lora_B"
             if lora_A_name in self.lora_adapters[lora_nickname]\
                 and lora_B_name in self.lora_adapters[lora_nickname]:
+                layer.lora_scale = lora_scale  # Set the scale before merging
                 layer.set_lora_weights(
                     self.lora_adapters[lora_nickname][lora_A_name],
                     self.lora_adapters[lora_nickname][lora_B_name],
@@ -268,7 +306,7 @@ class LoRAPipeline(ComposedPipelineBase):
                 if rank == 0:
                     logger.warning(
                         "LoRA adapter %s does not contain the weights for layer %s. LoRA will not be applied to it.",
-                        lora_path, name)
+                        lora_path, lookup_name)
                 layer.disable_lora = True
 
         # Synchronize all ranks after merging
@@ -281,6 +319,148 @@ class LoRAPipeline(ComposedPipelineBase):
 
         logger.info("Rank %d: LoRA adapter %s applied to %d layers", rank,
                     lora_path, adapted_count)
+
+    def set_dual_lora_adapters(
+        self,
+        lora_high_nickname: str,
+        lora_high_path: str,
+        lora_low_nickname: str,
+        lora_low_path: str,
+        lora_scale: float = 1.0
+    ):
+        """
+        Load two separate LoRA adapters for MoE models:
+        - HIGH LoRA for transformer (high noise expert, steps 0-3)
+        - LOW LoRA for transformer_2 (low noise expert, steps 4-11)
+
+        Args:
+            lora_high_nickname: Nickname for HIGH LoRA
+            lora_high_path: Path to HIGH LoRA safetensors file
+            lora_low_nickname: Nickname for LOW LoRA
+            lora_low_path: Path to LOW LoRA safetensors file
+            lora_scale: Scale for both LoRAs (default 1.0)
+        """
+        if not self.lora_initialized:
+            rank = dist.get_rank()
+            print(f"[LoRA DEBUG] rank {rank}: convert_to_lora_layers starting", flush=True)
+            self.convert_to_lora_layers()
+            print(f"[LoRA DEBUG] rank {rank}: convert_to_lora_layers done", flush=True)
+
+        rank = dist.get_rank()
+        print(f"[LoRA DEBUG] rank {rank}: Loading dual LoRAs - HIGH and LOW", flush=True)
+
+        # Load HIGH LoRA
+        lora_high_local = maybe_download_lora(lora_high_path)
+        lora_high_state = load_file(lora_high_local)
+        print(f"[LoRA DEBUG] rank {rank}: Loaded HIGH LoRA with {len(lora_high_state)} tensors", flush=True)
+
+        # Load LOW LoRA
+        lora_low_local = maybe_download_lora(lora_low_path)
+        lora_low_state = load_file(lora_low_local)
+        print(f"[LoRA DEBUG] rank {rank}: Loaded LOW LoRA with {len(lora_low_state)} tensors", flush=True)
+
+        # Register both LoRAs
+        self._register_lora_state_dict(lora_high_nickname, lora_high_state)
+        self._register_lora_state_dict(lora_low_nickname, lora_low_state)
+
+        # Synchronize before merging
+        if dist.is_initialized():
+            print(f"[LoRA DEBUG] rank {rank}: waiting at barrier before dual merge", flush=True)
+            dist.barrier()
+            print(f"[LoRA DEBUG] rank {rank}: passed barrier, starting dual merge", flush=True)
+
+        # Merge LoRAs to appropriate transformers
+        adapted_count_high = 0
+        adapted_count_low = 0
+
+        for idx, (name, layer) in enumerate(self.lora_layers.items()):
+            # Determine which LoRA to use based on transformer
+            if name.startswith("transformer_2."):
+                # LOW LoRA for transformer_2 (low noise expert)
+                lora_nickname = lora_low_nickname
+                lora_path_used = lora_low_path
+                lookup_name = name.replace("transformer_2.", "")
+                is_transformer_2 = True
+            else:
+                # HIGH LoRA for transformer (high noise expert)
+                lora_nickname = lora_high_nickname
+                lora_path_used = lora_high_path
+                lookup_name = name
+                is_transformer_2 = False
+
+            lora_A_name = lookup_name + ".lora_A"
+            lora_B_name = lookup_name + ".lora_B"
+
+            if lora_A_name in self.lora_adapters[lora_nickname] and lora_B_name in self.lora_adapters[lora_nickname]:
+                layer.lora_scale = lora_scale
+                layer.set_lora_weights(
+                    self.lora_adapters[lora_nickname][lora_A_name],
+                    self.lora_adapters[lora_nickname][lora_B_name],
+                    training_mode=self.fastvideo_args.training_mode,
+                    lora_path=lora_path_used
+                )
+                if is_transformer_2:
+                    adapted_count_low += 1
+                else:
+                    adapted_count_high += 1
+
+                if (adapted_count_high + adapted_count_low) % 200 == 0:
+                    print(f"[LoRA DEBUG] rank {rank}: applied weights to "
+                          f"{adapted_count_high + adapted_count_low}/{len(self.lora_layers)} layers "
+                          f"(HIGH: {adapted_count_high}, LOW: {adapted_count_low})", flush=True)
+            else:
+                if rank == 0:
+                    logger.warning(
+                        "LoRA adapter %s does not contain weights for layer %s. LoRA will not be applied.",
+                        lora_nickname, lookup_name
+                    )
+                layer.disable_lora = True
+
+        # Synchronize after merging
+        if dist.is_initialized():
+            print(f"[LoRA DEBUG] rank {rank}: waiting at barrier after dual merge", flush=True)
+            dist.barrier()
+            print(f"[LoRA DEBUG] rank {rank}: passed barrier after dual merge", flush=True)
+
+        logger.info("Rank %d: Applied dual LoRAs - HIGH: %d layers, LOW: %d layers",
+                    rank, adapted_count_high, adapted_count_low)
+
+    def _register_lora_state_dict(self, lora_nickname: str, lora_state_dict: dict):
+        """Helper method to register a LoRA state dict into the adapters."""
+        rank = dist.get_rank()
+
+        # Map the hf layer names to our custom layer names
+        param_names_mapping_fn = get_param_names_mapping(
+            self.modules["transformer"].param_names_mapping)
+        lora_param_names_mapping_fn = get_param_names_mapping(
+            self.modules["transformer"].lora_param_names_mapping)
+
+        to_merge_params = defaultdict(dict)
+        for idx, (name, weight) in enumerate(lora_state_dict.items()):
+            name = name.replace("diffusion_model.", "")
+            name = name.replace(".weight", "")
+            name, _, _ = lora_param_names_mapping_fn(name)
+            target_name, merge_index, num_params_to_merge = param_names_mapping_fn(name)
+
+            if merge_index is not None and "lora_B" in name:
+                to_merge_params[target_name][merge_index] = weight
+                if len(to_merge_params[target_name]) == num_params_to_merge:
+                    sorted_tensors = [
+                        to_merge_params[target_name][i]
+                        for i in range(num_params_to_merge)
+                    ]
+                    weight = torch.cat(sorted_tensors, dim=1)
+                    del to_merge_params[target_name]
+                else:
+                    continue
+
+            if target_name in self.lora_adapters[lora_nickname]:
+                raise ValueError(
+                    f"Target name {target_name} already exists in lora_adapters[{lora_nickname}]"
+                )
+            self.lora_adapters[lora_nickname][target_name] = weight.to(self.device)
+
+        print(f"[LoRA DEBUG] rank {rank}: registered {len(self.lora_adapters[lora_nickname])} tensors for {lora_nickname}", flush=True)
 
     def merge_lora_weights(self) -> None:
         for name, layer in self.lora_layers.items():

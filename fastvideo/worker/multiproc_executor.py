@@ -90,16 +90,37 @@ class MultiprocExecutor(Executor):
 
     def set_lora_adapter(self,
                          lora_nickname: str,
-                         lora_path: str | None = None) -> None:
+                         lora_path: str | None = None,
+                         lora_scale: float = 1.0) -> None:
         responses = self.collective_rpc("set_lora_adapter",
                                         kwargs={
                                             "lora_nickname": lora_nickname,
-                                            "lora_path": lora_path
+                                            "lora_path": lora_path,
+                                            "lora_scale": lora_scale
                                         })
         for i, response in enumerate(responses):
             if response["status"] != "lora_adapter_set":
                 raise RuntimeError(
                     f"Worker {i} failed to set LoRA adapter to {lora_path}")
+
+    def set_dual_lora_adapters(self,
+                               lora_high_nickname: str,
+                               lora_high_path: str,
+                               lora_low_nickname: str,
+                               lora_low_path: str,
+                               lora_scale: float = 1.0) -> None:
+        responses = self.collective_rpc("set_dual_lora_adapters",
+                                        kwargs={
+                                            "lora_high_nickname": lora_high_nickname,
+                                            "lora_high_path": lora_high_path,
+                                            "lora_low_nickname": lora_low_nickname,
+                                            "lora_low_path": lora_low_path,
+                                            "lora_scale": lora_scale
+                                        })
+        for i, response in enumerate(responses):
+            if response["status"] != "dual_lora_adapters_set":
+                raise RuntimeError(
+                    f"Worker {i} failed to set dual LoRA adapters")
 
     def unmerge_lora_weights(self) -> None:
         responses = self.collective_rpc("unmerge_lora_weights", kwargs={})

@@ -293,11 +293,13 @@ class RayDistributedExecutor(Executor):
 
     def set_lora_adapter(self,
                          lora_nickname: str,
-                         lora_path: str | None = None) -> None:
+                         lora_path: str | None = None,
+                         lora_scale: float = 1.0) -> None:
         responses = self.collective_rpc("set_lora_adapter",
                                         kwargs={
                                             "lora_nickname": lora_nickname,
-                                            "lora_path": lora_path
+                                            "lora_path": lora_path,
+                                            "lora_scale": lora_scale
                                         })
         for i, response in enumerate(responses):
             if response["status"] != "lora_adapter_set":

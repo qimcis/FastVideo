@@ -40,6 +40,10 @@ PIPE_NAME_TO_CONFIG: dict[str, type[PipelineConfig]] = {
     "Wan-AI/Wan2.2-TI2V-5B-Diffusers": Wan2_2_TI2V_5B_Config,
     "Wan-AI/Wan2.2-T2V-A14B-Diffusers": Wan2_2_T2V_A14B_Config,
     "Wan-AI/Wan2.2-I2V-A14B-Diffusers": Wan2_2_I2V_A14B_Config,
+    # Local path variants (without org prefix)
+    "Wan2.2-T2V-A14B-Diffusers": Wan2_2_T2V_A14B_Config,
+    "Wan2.2-I2V-A14B-Diffusers": Wan2_2_I2V_A14B_Config,
+    "Wan2.2-TI2V-5B-Diffusers": Wan2_2_TI2V_5B_Config,
     # Add other specific weight variants
 }
 

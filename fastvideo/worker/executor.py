@@ -54,9 +54,22 @@ class Executor(ABC):
     @abstractmethod
     def set_lora_adapter(self,
                          lora_nickname: str,
-                         lora_path: str | None = None) -> None:
+                         lora_path: str | None = None,
+                         lora_scale: float = 1.0) -> None:
         """
         Set the LoRA adapter for the workers.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_dual_lora_adapters(self,
+                               lora_high_nickname: str,
+                               lora_high_path: str,
+                               lora_low_nickname: str,
+                               lora_low_path: str,
+                               lora_scale: float = 1.0) -> None:
+        """
+        Set dual LoRA adapters (HIGH and LOW) for MoE models.
         """
         raise NotImplementedError
 

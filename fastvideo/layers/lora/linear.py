@@ -42,6 +42,7 @@ class BaseLayerWithLoRA(nn.Module):
         self.disable_lora: bool = False
         self.lora_rank = lora_rank
         self.lora_alpha = lora_alpha
+        self.lora_scale: float = 1.0  # Runtime LoRA strength multiplier
         self.training_mode = training_mode
         self.lora_path: str | None = None
 
@@ -86,6 +87,7 @@ class BaseLayerWithLoRA(nn.Module):
                 delta = delta * (
                     self.lora_alpha / self.lora_rank  # type: ignore
                 )  # type: ignore
+            delta = delta * self.lora_scale  # Apply runtime scale
             out, output_bias = self.base_layer(x)
             return out + delta, output_bias
         else:
@@ -134,8 +136,9 @@ class BaseLayerWithLoRA(nn.Module):
             current_device = self.base_layer.weight.data.device
             data = self.base_layer.weight.data.to(
                 get_local_torch_device()).full_tensor()
-            data += (self.slice_lora_b_weights(self.lora_B).to(data)
-                     @ self.slice_lora_a_weights(self.lora_A).to(data))
+            lora_delta = (self.slice_lora_b_weights(self.lora_B).to(data)
+                         @ self.slice_lora_a_weights(self.lora_A).to(data))
+            data += lora_delta * self.lora_scale
             unsharded_base_layer.weight = nn.Parameter(data.to(current_device))
             if isinstance(getattr(self.base_layer, "bias", None), DTensor):
                 unsharded_base_layer.bias = nn.Parameter(
@@ -158,8 +161,9 @@ class BaseLayerWithLoRA(nn.Module):
         else:
             current_device = self.base_layer.weight.data.device
             data = self.base_layer.weight.data.to(get_local_torch_device())
-            data += \
-                (self.slice_lora_b_weights(self.lora_B.to(data)) @ self.slice_lora_a_weights(self.lora_A.to(data)))
+            lora_delta = (self.slice_lora_b_weights(self.lora_B.to(data))
+                         @ self.slice_lora_a_weights(self.lora_A.to(data)))
+            data += lora_delta * self.lora_scale
             self.base_layer.weight.data = data.to(current_device,
                                                   non_blocking=True)
 

@@ -97,12 +97,30 @@ class Worker:
 
     def set_lora_adapter(self,
                          lora_nickname: str,
-                         lora_path: str | None = None) -> dict[str, Any]:
+                         lora_path: str | None = None,
+                         lora_scale: float = 1.0) -> dict[str, Any]:
         if isinstance(self.pipeline, LoRAPipeline):
-            self.pipeline.set_lora_adapter(lora_nickname, lora_path)
-            logger.info("Worker %d set LoRA adapter %s with path %s", self.rank,
-                        lora_nickname, lora_path)
+            self.pipeline.set_lora_adapter(lora_nickname, lora_path, lora_scale)
+            logger.info("Worker %d set LoRA adapter %s with path %s and scale %f",
+                        self.rank, lora_nickname, lora_path, lora_scale)
             return {"status": "lora_adapter_set"}
+        return {"status": "failed: pipeline is not a LoRAPipeline"}
+
+    def set_dual_lora_adapters(self,
+                               lora_high_nickname: str,
+                               lora_high_path: str,
+                               lora_low_nickname: str,
+                               lora_low_path: str,
+                               lora_scale: float = 1.0) -> dict[str, Any]:
+        if isinstance(self.pipeline, LoRAPipeline):
+            self.pipeline.set_dual_lora_adapters(
+                lora_high_nickname, lora_high_path,
+                lora_low_nickname, lora_low_path,
+                lora_scale
+            )
+            logger.info("Worker %d set dual LoRA adapters - HIGH: %s, LOW: %s with scale %f",
+                        self.rank, lora_high_path, lora_low_path, lora_scale)
+            return {"status": "dual_lora_adapters_set"}
         return {"status": "failed: pipeline is not a LoRAPipeline"}
 
     def unmerge_lora_weights(self) -> dict[str, Any]:
