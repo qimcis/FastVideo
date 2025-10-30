@@ -170,12 +170,26 @@ class LoRAPipeline(ComposedPipelineBase):
                 f"Adapter {lora_nickname} not found in the pipeline. Please provide lora_path to load it."
             )
         if not self.lora_initialized:
+            rank = dist.get_rank()
+            print(f"[LoRA DEBUG] rank {rank}: convert_to_lora_layers starting",
+                  flush=True)
             self.convert_to_lora_layers()
+            print(f"[LoRA DEBUG] rank {rank}: convert_to_lora_layers done",
+                  flush=True)
         adapter_updated = False
         rank = dist.get_rank()
+        print(f"[LoRA DEBUG] rank {rank}: set_lora_adapter start for "
+              f"{lora_nickname} (path={lora_path})",
+              flush=True)
         if lora_path is not None and lora_path != self.cur_adapter_path:
             lora_local_path = maybe_download_lora(lora_path)
+            print(f"[LoRA DEBUG] rank {rank}: resolved adapter path -> "
+                  f"{lora_local_path}",
+                  flush=True)
             lora_state_dict = load_file(lora_local_path)
+            print(f"[LoRA DEBUG] rank {rank}: loaded state dict with "
+                  f"{len(lora_state_dict)} tensors",
+                  flush=True)
 
             # Map the hf layer names to our custom layer names
             param_names_mapping_fn = get_param_names_mapping(
@@ -185,7 +199,7 @@ class LoRAPipeline(ComposedPipelineBase):
 
             to_merge_params: defaultdict[Hashable,
                                          dict[Any, Any]] = defaultdict(dict)
-            for name, weight in lora_state_dict.items():
+            for idx, (name, weight) in enumerate(lora_state_dict.items()):
                 name = name.replace("diffusion_model.", "")
                 name = name.replace(".weight", "")
                 name, _, _ = lora_param_names_mapping_fn(name)
@@ -212,17 +226,30 @@ class LoRAPipeline(ComposedPipelineBase):
                     )
                 self.lora_adapters[lora_nickname][target_name] = weight.to(
                     self.device)
+                if (idx + 1) % 500 == 0:
+                    print(f"[LoRA DEBUG] rank {rank}: processed {idx+1} / "
+                          f"{len(lora_state_dict)} tensors",
+                          flush=True)
             adapter_updated = True
             self.cur_adapter_path = lora_path
-            logger.info("Rank %d: loaded LoRA adapter %s", rank, lora_path)
+            print(f"[LoRA DEBUG] rank {rank}: adapter tensors registered",
+                  flush=True)
 
         if not adapter_updated and self.cur_adapter_name == lora_nickname:
             return
         self.cur_adapter_name = lora_nickname
 
+        # Synchronize all ranks before merging to avoid FSDP deadlock
+        if dist.is_initialized():
+            print(f"[LoRA DEBUG] rank {rank}: waiting at barrier before merge",
+                  flush=True)
+            dist.barrier()
+            print(f"[LoRA DEBUG] rank {rank}: passed barrier, starting merge",
+                  flush=True)
+
         # Merge the new adapter
         adapted_count = 0
-        for name, layer in self.lora_layers.items():
+        for idx, (name, layer) in enumerate(self.lora_layers.items()):
             lora_A_name = name + ".lora_A"
             lora_B_name = name + ".lora_B"
             if lora_A_name in self.lora_adapters[lora_nickname]\
@@ -233,12 +260,25 @@ class LoRAPipeline(ComposedPipelineBase):
                     training_mode=self.fastvideo_args.training_mode,
                     lora_path=lora_path)
                 adapted_count += 1
+                if adapted_count % 200 == 0:
+                    print(f"[LoRA DEBUG] rank {rank}: applied weights to "
+                          f"{adapted_count}/{len(self.lora_layers)} layers",
+                          flush=True)
             else:
                 if rank == 0:
                     logger.warning(
                         "LoRA adapter %s does not contain the weights for layer %s. LoRA will not be applied to it.",
                         lora_path, name)
                 layer.disable_lora = True
+
+        # Synchronize all ranks after merging
+        if dist.is_initialized():
+            print(f"[LoRA DEBUG] rank {rank}: waiting at barrier after merge",
+                  flush=True)
+            dist.barrier()
+            print(f"[LoRA DEBUG] rank {rank}: passed barrier after merge",
+                  flush=True)
+
         logger.info("Rank %d: LoRA adapter %s applied to %d layers", rank,
                     lora_path, adapted_count)
 

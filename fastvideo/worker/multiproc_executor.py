@@ -455,7 +455,7 @@ class WorkerMultiprocProc:
                         with contextlib.suppress(Exception):
                             self.pipe.send(response)
                         break
-                    if method == 'execute_forward':
+                    elif method == 'execute_forward':
                         forward_batch = kwargs['forward_batch']
                         fastvideo_args = kwargs['fastvideo_args']
                         output_batch = self.worker.execute_forward(
@@ -467,6 +467,10 @@ class WorkerMultiprocProc:
                             "output_batch": output_batch.output.cpu(),
                             "logging_info": logging_info
                         })
+                    else:
+                        # Handle other string methods like set_lora_adapter
+                        result = self.worker.execute_method(method, *args, **kwargs)
+                        self.pipe.send(result)
                 else:
                     result = self.worker.execute_method(method, *args, **kwargs)
                     self.pipe.send(result)

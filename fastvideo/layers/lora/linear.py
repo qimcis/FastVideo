@@ -151,6 +151,10 @@ class BaseLayerWithLoRA(nn.Module):
                                           mesh=mesh,
                                           mp_policy=mp_policy,
                                           offload_policy=offload_policy)
+            # Synchronize after FSDP collective operation
+            import torch.distributed as dist
+            if dist.is_initialized():
+                dist.barrier()
         else:
             current_device = self.base_layer.weight.data.device
             data = self.base_layer.weight.data.to(get_local_torch_device())

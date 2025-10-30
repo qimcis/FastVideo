@@ -538,10 +538,14 @@ def maybe_download_lora(model_name_or_path: str,
         model_name_or_path: Local path or Hugging Face Hub model ID
         local_dir: Local directory to save the model
         download: Whether to download the model from Hugging Face Hub
-        
+
     Returns:
         Local path to the model
     """
+    # If the path is already a .safetensors file, return it directly
+    if model_name_or_path.endswith('.safetensors') and os.path.isfile(model_name_or_path):
+        logger.info("Model already exists locally at %s", model_name_or_path)
+        return model_name_or_path
 
     local_path = maybe_download_model(model_name_or_path, local_dir, download)
     weight_name = _best_guess_weight_name(model_name_or_path,
