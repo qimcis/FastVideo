@@ -1,17 +1,23 @@
 import os
 from fastvideo import VideoGenerator
+from fastvideo.configs.pipelines.wan import WanT2V720PConfig
 
 def main():
     os.environ.setdefault("FASTVIDEO_ATTENTION_BACKEND", "VIDEO_SPARSE_ATTN")
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0,1")
 
-    print("Loading Wan2.2 with stacked LoRAs (instagirl + lenovo-ultrareal)...")
+    print("Loading Wan2.2-T2V-A14B with stacked LoRAs (instagirl + lenovo-ultrareal)...")
+
+    # Create config first to override auto-detection
+    config = WanT2V720PConfig()
+
     generator = VideoGenerator.from_pretrained(
-        "Wan-AI/Wan2.2-TI2V-5B-Diffusers",
+        "/workspace/FastVideo/models/Wan2.2-T2V-A14B-Diffusers",
         num_gpus=2,
         use_fsdp_inference=True,
         dit_cpu_offload=False,
-        lora_path="/workspace/FastVideo/loras", 
+        lora_path="/workspace/FastVideo/loras",
+        pipeline_config=config,
     )
 
     print("\nGenerating 5 second video with stacked LoRAs...")
@@ -26,7 +32,7 @@ def main():
         save_video=True,
         output_path="/workspace/FastVideo/outputs/test_stacked_loras.mp4",
     )
-    print("✓ Video generated successfully with both LoRAs stacked!")
+    print("✓ Video generated successfully with Wan2.2-14B and both LoRAs stacked!")
 
 if __name__ == "__main__":
     main()
