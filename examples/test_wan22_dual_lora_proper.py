@@ -1,10 +1,11 @@
 """
-Proper dual LoRA test for Wan2.2 MoE model.
+Proper dual LoRA test for Wan2.2 MoE model with adjusted boundary ratio.
 
-HIGH LoRA → transformer (high noise expert, steps 0-3)
-LOW LoRA → transformer_2 (low noise expert, steps 4-11)
+HIGH LoRA → transformer (high noise expert, steps 1-4, 33%)
+LOW LoRA → transformer_2 (low noise expert, steps 5-12, 67%)
 
-This matches ComfyUI's approach for maximum color vibrancy.
+boundary_ratio = 0.965 matches the combined LoRA weighting (33% HIGH + 67% LOW)
+for maximum color vibrancy.
 """
 import os
 from pathlib import Path
@@ -72,14 +73,16 @@ def main():
         save_video=True,
         output_path=output_path,
         seed=1024,
+        boundary_ratio=0.965,  # 4 HIGH steps + 8 LOW steps (33%/67% split)
     )
 
     print("\n" + "="*80)
-    print("✓ VIDEO GENERATED WITH DUAL LORAS (HIGH + LOW)")
+    print("✓ VIDEO GENERATED WITH DUAL LORAS (33% HIGH + 67% LOW)")
     print("="*80)
     print(f"Output: {output_path}")
-    print("\nThis should have vibrant colors without excessive noise!")
-    print("Colors should match or exceed ComfyUI quality.")
+    print(f"boundary_ratio: 0.965 (4 HIGH steps + 8 LOW steps)")
+    print("\nThis should have vibrant colors matching the combined LoRA!")
+    print("The 33%/67% split matches the combined LoRA weighting.")
 
 
 if __name__ == "__main__":

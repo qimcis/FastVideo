@@ -13,6 +13,18 @@ from safetensors.torch import load_file, save_file
 from fastvideo import VideoGenerator
 from fastvideo.configs.pipelines.wan import Wan2_2_T2V_A14B_Config
 
+MODEL_PATH = "/workspace/FastVideo/models/Wan2.2-T2V-A14B-Diffusers"
+OUTPUT_DIR = Path("/workspace/FastVideo/outputs")
+LORA_HIGH = Path(
+    "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-HIGH_converted.safetensors")
+LORA_LOW = Path(
+    "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-LOW_converted.safetensors")
+COMBINED_LORA = Path(
+    "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-COMBINED_33high_67low.safetensors")
+
+_GENERATOR: VideoGenerator | None = None
+_CURRENT_LORA: tuple[str, float] | None = None
+
 
 def combine_loras(lora_paths, weights, output_path):
     """
@@ -93,85 +105,115 @@ def combine_loras(lora_paths, weights, output_path):
     return str(output_path)
 
 
-def main():
-    os.environ.setdefault("FASTVIDEO_ATTENTION_BACKEND", "SAGE_ATTN_THREE")
+def get_video_generator() -> VideoGenerator:
+    """Lazy-load and cache a VideoGenerator instance for reuse."""
+    global _GENERATOR
+    if _GENERATOR is not None:
+        return _GENERATOR
+
+    os.environ.setdefault("FASTVIDEO_ATTENTION_BACKEND", "VIDEO_SPARSE_ATTN")
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", "0,1")
 
     config = Wan2_2_T2V_A14B_Config()
 
-    # Combine HIGH and LOW LoRAs
-    lora_high = "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-HIGH_converted.safetensors"
-    lora_low = "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-LOW_converted.safetensors"
-
-    # Weight ratio: 4 steps HIGH / 12 total = 0.33, 8 steps LOW / 12 total = 0.67
-    combined_lora_path = "/workspace/FastVideo/loras/Instagirlv2.5/Instagirlv2.5-COMBINED_33high_67low.safetensors"
-
-    if not Path(combined_lora_path).exists():
-        print("\n" + "="*80)
-        print("COMBINING HIGH + LOW LORAs")
-        print("="*80)
-        combine_loras(
-            lora_paths=[lora_high, lora_low],
-            weights=[0.33, 0.67],  # 4 steps / 12 total, 8 steps / 12 total
-            output_path=combined_lora_path
-        )
-    else:
-        print(f"\n✓ Combined LoRA already exists: {combined_lora_path}\n")
-
-    # Initialize generator
-    generator = VideoGenerator.from_pretrained(
-        "/workspace/FastVideo/models/Wan2.2-T2V-A14B-Diffusers",
+    _GENERATOR = VideoGenerator.from_pretrained(
+        MODEL_PATH,
         num_gpus=2,
         use_fsdp_inference=True,
         dit_cpu_offload=False,
         pipeline_config=config,
     )
-    Path("/workspace/FastVideo/outputs").mkdir(parents=True, exist_ok=True)
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    return _GENERATOR
 
-    # Apply combined LoRA
-    print("="*80)
-    print("GENERATING WITH COMBINED HIGH+LOW LORA")
-    print("="*80)
-    generator.set_lora_adapter(
-        lora_nickname="instagirl_combined",
-        lora_path=combined_lora_path,
-        lora_scale=1.1
-    )
 
-    prompt = (
-        "Instagirl, casual mirror selfie with the iPhone 8 front camera "
-        "(7MP, f/2.2, 1080p/30), walking in Central Park at late‑afternoon golden hour; "
-        "head‑and‑shoulders at arm's length, mild wide‑angle feel, natural skin with fine pores, "
-        "faint peach fuzz, tiny freckles and slight uneven tone (no beauty filter), lively eyes, "
-        "subtle off‑white teeth with natural enamel translucency, a few hair flyaways, knit sweater "
-        "and simple pendant; trees and a thin skyline band softly blurred behind, gentle sun flare, "
-        "small hand‑held sway and a single natural blink, warm but true‑to‑life color, no oversharpening."
-    )
+def shutdown_generator() -> None:
+    """Cleanly tear down the cached generator (if any)."""
+    global _GENERATOR, _CURRENT_LORA
+    if _GENERATOR is not None:
+        _GENERATOR.shutdown()
+    _GENERATOR = None
+    _CURRENT_LORA = None
 
-    negative_prompt = "censored, sunburnt skin, rashy skin, red cheeks"
 
-    output_path = "/workspace/FastVideo/outputs/test_combined_loras.mp4"
+def prepare_combined_lora() -> Path:
+    """Ensure the combined LoRA exists on disk and return its path."""
+    # Weight ratio: 4 steps HIGH / 12 total = 0.33, 8 steps LOW / 12 total = 0.67
+    if not COMBINED_LORA.exists():
+        print("\n" + "="*80)
+        print("COMBINING HIGH + LOW LORAs")
+        print("="*80)
+        combine_loras(
+            lora_paths=[LORA_HIGH, LORA_LOW],
+            weights=[0.33, 0.67],  # 4 steps / 12 total, 8 steps / 12 total
+            output_path=COMBINED_LORA
+        )
+    else:
+        print(f"\n✓ Combined LoRA already exists: {COMBINED_LORA}\n")
+    return COMBINED_LORA
+
+
+def load_combined_lora(lora_scale: float = 1.1) -> VideoGenerator:
+    """
+    Load (or reuse) the cached generator and apply the combined LoRA.
+
+    LoRA application is idempotent—if the same adapter and scale were already
+    applied, we skip the call to avoid redundant synchronization/barriers.
+    """
+    global _CURRENT_LORA
+    generator = get_video_generator()
+    combined_lora_path = prepare_combined_lora()
+
+    cache_key = (combined_lora_path.as_posix(), lora_scale)
+    if _CURRENT_LORA != cache_key:
+        print("="*80)
+        print("GENERATING WITH COMBINED HIGH+LOW LORA")
+        print("="*80)
+        generator.set_lora_adapter(
+            lora_nickname="instagirl_combined",
+            lora_path=combined_lora_path.as_posix(),
+            lora_scale=lora_scale,
+        )
+        _CURRENT_LORA = cache_key
+    else:
+        print("="*80)
+        print("REUSING CACHED GENERATOR + COMBINED LORA")
+        print("="*80)
+    return generator
+
+
+def main():
+    generator = load_combined_lora(lora_scale=1.1)
+
+    prompt = ""
+
+    negative_prompt = ""
+
+    output_path = OUTPUT_DIR / "test_combined_loras.mp4"
     generator.generate_video(
         prompt=prompt,
         negative_prompt=negative_prompt,
         height=1280,
         width=960,
-        num_frames=150,
+        num_frames=75,
         num_inference_steps=12,
-        fps=30,
-        guidance_scale=1.0,
+        fps=15,
+        guidance_scale=4.0,
         save_video=True,
-        output_path=output_path,
+        output_path=output_path.as_posix(),
         seed=1024,
     )
 
     print("\n" + "="*80)
     print("✓ VIDEO GENERATED WITH COMBINED HIGH+LOW LORA")
     print("="*80)
-    print(f"Output: {output_path}")
+    print(f"Output: {output_path.as_posix()}")
     print("\nThis combined LoRA should improve color vibrancy vs single HIGH or LOW LoRA.")
     print("Compare this to your previous videos to see if colors are more vibrant!")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        shutdown_generator()
