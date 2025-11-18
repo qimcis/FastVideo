@@ -24,6 +24,11 @@ checkpoints/
 sbatch.sh
 *.out
 env
+.venv/
+venv/
+.cache/
+tmp/
+tmp_*/
 *.o
 **/build/
 **.pyc
