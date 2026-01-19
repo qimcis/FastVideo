@@ -198,23 +198,16 @@ def multi_thread_safetensors_weights_iterator(
 
     with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers) as executor:
-        futures = [
-            executor.submit(_load_file, st_file) for st_file in hf_weights_files
-        ]
-
+        futures_iter = executor.map(_load_file, hf_weights_files)
         if enable_tqdm:
             futures_iter = tqdm(
-                concurrent.futures.as_completed(futures),
+                futures_iter,
                 total=len(hf_weights_files),
                 desc="Multi-thread loading shards",
                 disable=not enable_tqdm,
                 bar_format=_BAR_FORMAT,
             )
-        else:
-            futures_iter = concurrent.futures.as_completed(futures)
-
-        for future in futures_iter:
-            state_dict = future.result()
+        for state_dict in futures_iter:
             for name, param in state_dict.items():
                 yield name, param
 
@@ -274,24 +267,17 @@ def multi_thread_pt_weights_iterator(
 
     with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers) as executor:
-        futures = [
-            executor.submit(_load_pt_file, bin_file, device)
-            for bin_file in hf_weights_files
-        ]
-
+        futures_iter = executor.map(
+            lambda bin_file: _load_pt_file(bin_file, device), hf_weights_files)
         if enable_tqdm:
             futures_iter = tqdm(
-                concurrent.futures.as_completed(futures),
+                futures_iter,
                 total=len(hf_weights_files),
                 desc="Multi-thread loading pt checkpoint shards",
                 disable=not enable_tqdm,
                 bar_format=_BAR_FORMAT,
             )
-        else:
-            futures_iter = concurrent.futures.as_completed(futures)
-
-        for future in futures_iter:
-            state = future.result()
+        for state in futures_iter:
             yield from state.items()
 
 
