@@ -8,7 +8,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import Generator, Iterable
 from copy import deepcopy
-from typing import cast
+from typing import Any, cast
 
 import torch
 import torch.distributed as dist
@@ -29,8 +29,11 @@ from fastvideo.models.hf_transformer_utils import get_diffusers_config
 from fastvideo.models.loader.fsdp_load import maybe_load_fsdp_model, shard_model
 from fastvideo.models.loader.utils import set_default_torch_dtype
 from fastvideo.models.loader.weight_utils import (
+    DEFAULT_NUM_THREADS,
     filter_duplicate_safetensors_files,
     filter_files_not_needed_for_inference,
+    multi_thread_pt_weights_iterator,
+    multi_thread_safetensors_weights_iterator,
     pt_weights_iterator,
     safetensors_weights_iterator,
 )
@@ -179,22 +182,38 @@ class TextEncoderLoader(ComponentLoader):
         return hf_folder, hf_weights_files, use_safetensors
 
     def _get_weights_iterator(
-        self, source: "Source", to_cpu: bool
+        self,
+        source: "Source",
+        to_cpu: bool,
+        model_loader_extra_config: dict[str, Any] | None = None,
     ) -> Generator[tuple[str, torch.Tensor], None, None]:
         """Get an iterator for the model weights based on the load format."""
+        extra_config = model_loader_extra_config or {}
         hf_folder, hf_weights_files, use_safetensors = self._prepare_weights(
             source.model_or_path,
             source.fall_back_to_pt,
             source.allow_patterns_overrides,
         )
+        enable_multithread = extra_config.get("enable_multithread_load", False)
+        num_threads = extra_config.get("num_threads", DEFAULT_NUM_THREADS)
         if use_safetensors:
-            weights_iterator = safetensors_weights_iterator(
-                hf_weights_files, to_cpu=to_cpu
-            )
+            if enable_multithread:
+                weights_iterator = multi_thread_safetensors_weights_iterator(
+                    hf_weights_files, to_cpu=to_cpu, max_workers=num_threads
+                )
+            else:
+                weights_iterator = safetensors_weights_iterator(
+                    hf_weights_files, to_cpu=to_cpu
+                )
         else:
-            weights_iterator = pt_weights_iterator(
-                hf_weights_files, to_cpu=to_cpu
-            )
+            if enable_multithread:
+                weights_iterator = multi_thread_pt_weights_iterator(
+                    hf_weights_files, to_cpu=to_cpu, max_workers=num_threads
+                )
+            else:
+                weights_iterator = pt_weights_iterator(
+                    hf_weights_files, to_cpu=to_cpu
+                )
 
         if self.counter_before_loading_weights == 0.0:
             self.counter_before_loading_weights = time.perf_counter()
@@ -209,6 +228,7 @@ class TextEncoderLoader(ComponentLoader):
         model: nn.Module,
         model_path: str,
         to_cpu: bool,
+        model_loader_extra_config: dict[str, Any] | None = None,
     ) -> Generator[tuple[str, torch.Tensor], None, None]:
         primary_weights = TextEncoderLoader.Source(
             model_path,
@@ -218,14 +238,22 @@ class TextEncoderLoader(ComponentLoader):
                 model, "allow_patterns_overrides", None
             ),
         )
-        yield from self._get_weights_iterator(primary_weights, to_cpu)
+        yield from self._get_weights_iterator(
+            primary_weights,
+            to_cpu,
+            model_loader_extra_config=model_loader_extra_config,
+        )
 
         secondary_weights = cast(
             Iterable[TextEncoderLoader.Source],
             getattr(model, "secondary_weights", ()),
         )
         for source in secondary_weights:
-            yield from self._get_weights_iterator(source, to_cpu)
+            yield from self._get_weights_iterator(
+                source,
+                to_cpu,
+                model_loader_extra_config=model_loader_extra_config,
+            )
 
     def load(self, model_path: str, fastvideo_args: FastVideoArgs):
         """Load the text encoders based on the model path, and inference args."""
@@ -323,7 +351,10 @@ class TextEncoderLoader(ComponentLoader):
             else:
                 loaded_weights: set[str] = model.load_weights(
                     self._get_all_weights(
-                        model, model_path, to_cpu=use_cpu_offload
+                        model,
+                        model_path,
+                        to_cpu=use_cpu_offload,
+                        model_loader_extra_config=fastvideo_args.model_loader_extra_config,
                     )
                 )  # type: ignore
 
@@ -600,6 +631,7 @@ class TransformerLoader(ComponentLoader):
             training_mode=fastvideo_args.training_mode,
             enable_torch_compile=fastvideo_args.enable_torch_compile,
             torch_compile_kwargs=fastvideo_args.torch_compile_kwargs,
+            model_loader_extra_config=fastvideo_args.model_loader_extra_config,
         )
 
         total_params = sum(p.numel() for p in model.parameters())

@@ -108,6 +108,7 @@ class FastVideoArgs:
     # HuggingFace specific parameters
     trust_remote_code: bool = False
     revision: str | None = None
+    model_loader_extra_config: dict[str, Any] = field(default_factory=dict)
 
     # Parallelism
     num_gpus: int = 1
@@ -267,6 +268,14 @@ class FastVideoArgs:
             default=FastVideoArgs.revision,
             help=
             "The specific model version to use (can be a branch name, tag name, or commit id)",
+        )
+        parser.add_argument(
+            "--model-loader-extra-config",
+            type=str,
+            default=None,
+            help=
+            "Extra config for model loader as a JSON string. Example: "
+            "'{\"enable_multithread_load\": true, \"num_threads\": 8}'",
         )
 
         # Parallelism
@@ -549,6 +558,19 @@ class FastVideoArgs:
                 mode_value = getattr(args, attr, FastVideoArgs.mode.value)
                 kwargs['mode'] = ExecutionMode.from_string(
                     mode_value) if isinstance(mode_value, str) else mode_value
+            elif attr == 'model_loader_extra_config':
+                extra_config_str = getattr(args, 'model_loader_extra_config',
+                                           None)
+                if extra_config_str:
+                    try:
+                        kwargs['model_loader_extra_config'] = json.loads(
+                            extra_config_str)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(
+                            f"Invalid JSON for model_loader_extra_config: {e}"
+                        ) from e
+                else:
+                    kwargs['model_loader_extra_config'] = {}
             elif attr == 'torch_compile_kwargs':
                 # Parse JSON string for torch.compile kwargs
                 torch_compile_kwargs_str = getattr(args, 'torch_compile_kwargs',
@@ -598,6 +620,13 @@ class FastVideoArgs:
                                                     str):
             kwargs['workload_type'] = WorkloadType.from_string(
                 kwargs['workload_type'])
+        if 'model_loader_extra_config' in kwargs:
+            extra_config = kwargs['model_loader_extra_config']
+            if isinstance(extra_config, str):
+                kwargs['model_loader_extra_config'] = (json.loads(extra_config)
+                                                       if extra_config else {})
+            elif extra_config is None:
+                kwargs['model_loader_extra_config'] = {}
 
         kwargs['pipeline_config'] = PipelineConfig.from_kwargs(kwargs)
         kwargs['preprocess_config'] = PreprocessConfig.from_kwargs(kwargs)
@@ -610,6 +639,18 @@ class FastVideoArgs:
         if current_platform.is_mps():
             self.use_fsdp_inference = False
             self.dit_layerwise_offload = False
+
+        extra_config = self.model_loader_extra_config or {}
+        if not isinstance(extra_config, dict):
+            raise ValueError("model_loader_extra_config must be a dict.")
+        allowed_keys = {"enable_multithread_load", "num_threads"}
+        unexpected_keys = set(extra_config.keys()) - allowed_keys
+        if unexpected_keys:
+            raise ValueError(
+                "Unexpected keys in model_loader_extra_config: "
+                f"{unexpected_keys}. Allowed keys: {allowed_keys}."
+            )
+        self.model_loader_extra_config = extra_config
 
         if self.dit_layerwise_offload:
             if self.use_fsdp_inference:
@@ -884,6 +925,18 @@ class TrainingArgs(FastVideoArgs):
                 kwargs[attr] = WorkloadType.from_string(
                     workload_type_value) if isinstance(
                         workload_type_value, str) else workload_type_value
+            elif attr == 'model_loader_extra_config':
+                extra_config_str = getattr(args, 'model_loader_extra_config',
+                                           None)
+                if extra_config_str:
+                    try:
+                        kwargs[attr] = json.loads(extra_config_str)
+                    except json.JSONDecodeError as e:
+                        raise ValueError(
+                            f"Invalid JSON for model_loader_extra_config: {e}"
+                        ) from e
+                else:
+                    kwargs[attr] = {}
             # Use getattr with default value from the dataclass for potentially missing attributes
             else:
                 # Get the field to check its default value

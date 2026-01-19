@@ -22,7 +22,11 @@ from torch.nn.modules.module import _IncompatibleKeys
 from fastvideo.logger import init_logger
 from fastvideo.models.loader.utils import (get_param_names_mapping,
                                            hf_to_custom_state_dict)
-from fastvideo.models.loader.weight_utils import safetensors_weights_iterator
+from fastvideo.models.loader.weight_utils import (
+    DEFAULT_NUM_THREADS,
+    multi_thread_safetensors_weights_iterator,
+    safetensors_weights_iterator,
+)
 from fastvideo.utils import set_mixed_precision_policy
 
 logger = init_logger(__name__)
@@ -74,6 +78,7 @@ def maybe_load_fsdp_model(
     pin_cpu_memory: bool = True,
     enable_torch_compile: bool = False,
     torch_compile_kwargs: dict[str, Any] | None = None,
+    model_loader_extra_config: dict[str, Any] | None = None,
 ) -> torch.nn.Module:
     """
     Load the model with FSDP if is training, else load the model without FSDP.
@@ -134,7 +139,15 @@ def maybe_load_fsdp_model(
                     fsdp_shard_conditions=model._fsdp_shard_conditions,
                     pin_cpu_memory=pin_cpu_memory)
 
-    weight_iterator = safetensors_weights_iterator(weight_dir_list)
+    extra_config = model_loader_extra_config or {}
+    enable_multithread = extra_config.get("enable_multithread_load", False)
+    num_threads = extra_config.get("num_threads", DEFAULT_NUM_THREADS)
+    if enable_multithread:
+        weight_iterator = multi_thread_safetensors_weights_iterator(
+            weight_dir_list, max_workers=num_threads
+        )
+    else:
+        weight_iterator = safetensors_weights_iterator(weight_dir_list)
     param_names_mapping_fn = get_param_names_mapping(model.param_names_mapping)
     load_model_from_full_model_state_dict(
         model,

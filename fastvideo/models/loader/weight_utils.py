@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Adapted from vllm: https://github.com/vllm-project/vllm/blob/v0.7.3/vllm/model_executor/model_loader/weight_utils.py
 """Utilities for downloading and initializing model weights."""
+import concurrent.futures
 import hashlib
 import json
 import os
@@ -11,10 +12,11 @@ from pathlib import Path
 import filelock
 import huggingface_hub.constants
 import torch
+import torch.distributed as dist
 from safetensors.torch import safe_open
 from tqdm.auto import tqdm
 
-from fastvideo.distributed import get_local_torch_device
+from fastvideo.distributed import get_local_torch_device, get_node_group
 from fastvideo.logger import init_logger
 
 logger = init_logger(__name__)
@@ -24,6 +26,7 @@ logger = init_logger(__name__)
 # lock files in the temp directory will be automatically deleted when the
 # system reboots, so users will not complain about annoying lock files
 temp_dir = tempfile.gettempdir()
+DEFAULT_NUM_THREADS = 8
 
 
 def enable_hf_transfer() -> None:
@@ -119,12 +122,27 @@ _BAR_FORMAT = "{desc}: {percentage:3.0f}% Completed | {n_fmt}/{total_fmt} [{elap
 
 def safetensors_weights_iterator(
     hf_weights_files: list[str],
-    to_cpu: bool = True,
+    to_cpu: bool = False,
+    async_broadcast: bool = False,
 ) -> Generator[tuple[str, torch.Tensor], None, None]:
-    """Iterate over the weights in the model safetensor files."""
-    enable_tqdm = not torch.distributed.is_initialized(
-    ) or torch.distributed.get_rank() == 0
-    device = "cpu" if to_cpu else str(get_local_torch_device())
+    """Iterate over the weights in the model safetensor files.
+
+    Args:
+        hf_weights_files: List of safetensor files to load.
+        to_cpu: Whether to load the weights to CPU. If False, will load to the
+            device bound to the current process.
+        async_broadcast: Whether to overlap loading from disk and broadcasting
+            to other ranks. If True, must iterate over all the weights before
+            use. Only use if to_cpu is False.
+    """
+    node_group = get_node_group() if torch.distributed.is_initialized() else None
+    local_rank = node_group.local_rank if node_group else 0
+    device_type = get_local_torch_device().type
+    device = "cpu" if to_cpu else f"{device_type}:{local_rank}"
+    enable_tqdm = not torch.distributed.is_initialized() or local_rank == 0
+    assert not (async_broadcast
+                and to_cpu), "Cannot broadcast weights when loading to CPU"
+    handles = []
     for st_file in tqdm(
             hf_weights_files,
             desc="Loading safetensors checkpoint shards",
@@ -133,8 +151,89 @@ def safetensors_weights_iterator(
     ):
         with safe_open(st_file, framework="pt", device=device) as f:
             for name in f.keys():  # noqa: SIM118
-                param = f.get_tensor(name)
+                if to_cpu:
+                    param = f.get_tensor(name)
+                else:
+                    if local_rank == 0:
+                        param = f.get_tensor(name)
+                    else:
+                        shape = f.get_slice(name).get_shape()
+                        param = torch.empty(shape, device=device)
+                    if node_group and node_group.world_size > 1:
+                        group = node_group.device_group
+                        src = dist.get_global_rank(group, 0)
+                        if async_broadcast:
+                            handle = dist.broadcast(param,
+                                                    src=src,
+                                                    async_op=True,
+                                                    group=group)
+                            handles.append(handle)
+                        else:
+                            dist.broadcast(param, src=src, group=group)
                 yield name, param
+        if async_broadcast:
+            for handle in handles:
+                handle.wait()
+            handles.clear()
+
+
+def multi_thread_safetensors_weights_iterator(
+    hf_weights_files: list[str],
+    to_cpu: bool = False,
+    max_workers: int = 4,
+) -> Generator[tuple[str, torch.Tensor], None, None]:
+    """Multi-thread iterate over the weights in the model safetensor files."""
+    node_group = get_node_group() if torch.distributed.is_initialized() else None
+    local_rank = node_group.local_rank if node_group else 0
+    device_type = get_local_torch_device().type
+    device = "cpu" if to_cpu else f"{device_type}:{local_rank}"
+    enable_tqdm = not torch.distributed.is_initialized() or local_rank == 0
+
+    def _load_file(st_file: str) -> dict[str, torch.Tensor]:
+        with safe_open(st_file, framework="pt", device=device) as f:
+            return {name: f.get_tensor(name) for name in f.keys()}
+
+    if max_workers < 1:
+        max_workers = 1
+
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_load_file, st_file) for st_file in hf_weights_files
+        ]
+
+        if enable_tqdm:
+            futures_iter = tqdm(
+                concurrent.futures.as_completed(futures),
+                total=len(hf_weights_files),
+                desc="Multi-thread loading shards",
+                disable=not enable_tqdm,
+                bar_format=_BAR_FORMAT,
+            )
+        else:
+            futures_iter = concurrent.futures.as_completed(futures)
+
+        for future in futures_iter:
+            state_dict = future.result()
+            for name, param in state_dict.items():
+                yield name, param
+
+
+def _load_pt_file(bin_file: str,
+                  map_location: str | torch.device) -> dict:
+    """Load a PyTorch checkpoint file, handling legacy tar format."""
+    try:
+        return torch.load(bin_file, map_location=map_location, weights_only=True)
+    except RuntimeError as exc:
+        if "legacy .tar format" in str(exc):
+            logger.warning(
+                "Loading %s with weights_only=False (legacy tar format)",
+                os.path.basename(bin_file),
+            )
+            return torch.load(bin_file,
+                              map_location=map_location,
+                              weights_only=False)
+        raise
 
 
 def pt_weights_iterator(
@@ -142,18 +241,58 @@ def pt_weights_iterator(
     to_cpu: bool = True,
 ) -> Generator[tuple[str, torch.Tensor], None, None]:
     """Iterate over the weights in the model bin/pt files."""
-    device = "cpu" if to_cpu else str(get_local_torch_device())
-    enable_tqdm = not torch.distributed.is_initialized(
-    ) or torch.distributed.get_rank() == 0
+    node_group = get_node_group() if torch.distributed.is_initialized() else None
+    local_rank = node_group.local_rank if node_group else 0
+    device_type = get_local_torch_device().type
+    device = "cpu" if to_cpu else f"{device_type}:{local_rank}"
+    enable_tqdm = not torch.distributed.is_initialized() or local_rank == 0
     for bin_file in tqdm(
             hf_weights_files,
             desc="Loading pt checkpoint shards",
             disable=not enable_tqdm,
             bar_format=_BAR_FORMAT,
     ):
-        state = torch.load(bin_file, map_location=device, weights_only=True)
+        state = _load_pt_file(bin_file, device)
         yield from state.items()
         del state
+
+
+def multi_thread_pt_weights_iterator(
+    hf_weights_files: list[str],
+    to_cpu: bool = True,
+    max_workers: int = 4,
+) -> Generator[tuple[str, torch.Tensor], None, None]:
+    """Multi-thread iterate over the weights in the model bin/pt files."""
+    node_group = get_node_group() if torch.distributed.is_initialized() else None
+    local_rank = node_group.local_rank if node_group else 0
+    device_type = get_local_torch_device().type
+    device = "cpu" if to_cpu else f"{device_type}:{local_rank}"
+    enable_tqdm = not torch.distributed.is_initialized() or local_rank == 0
+
+    if max_workers < 1:
+        max_workers = 1
+
+    with concurrent.futures.ThreadPoolExecutor(
+            max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(_load_pt_file, bin_file, device)
+            for bin_file in hf_weights_files
+        ]
+
+        if enable_tqdm:
+            futures_iter = tqdm(
+                concurrent.futures.as_completed(futures),
+                total=len(hf_weights_files),
+                desc="Multi-thread loading pt checkpoint shards",
+                disable=not enable_tqdm,
+                bar_format=_BAR_FORMAT,
+            )
+        else:
+            futures_iter = concurrent.futures.as_completed(futures)
+
+        for future in futures_iter:
+            state = future.result()
+            yield from state.items()
 
 
 def default_weight_loader(param: torch.Tensor,
